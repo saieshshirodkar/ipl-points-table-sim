@@ -1,0 +1,446 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+/* Animation Keyframes */
+@keyframes fadeInSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+body {
+    font-family: 'Poppins', sans-serif; /* Use Poppins */
+    background-color: #121212; /* Dark background */
+    color: #ececec; /* Slightly lighter main text */
+    margin: 0;
+    padding: 10px; /* Reduce padding slightly for mobile */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative; /* Needed for absolute positioning of children */
+
+    /* Disable text selection */
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE/Edge */
+    user-select: none;
+}
+
+h1, h2 {
+    text-align: center; /* Center headings */
+    width: 100%; /* Ensure they take full width */
+}
+
+h1 {
+    margin-top: 20px; /* Add some top margin */
+    margin-bottom: 30px; /* Increased bottom margin */
+    font-weight: 600; /* Make main heading bolder */
+    font-size: 2.5em; /* Slightly larger */
+    letter-spacing: 1px;
+
+    /* Subtle Gradient Text */
+    background: linear-gradient(45deg, #e0e0e0, #ffffff, #e0e0e0);
+    -webkit-background-clip: text; /* Clip background to text (webkit) */
+    background-clip: text;
+    color: transparent; /* Make original text transparent */
+
+    /* Optional: Subtle shadow */
+    /* text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); */
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+}
+
+h1:focus,
+h1:focus-visible {
+    outline: none; /* Remove focus outline for both states */
+}
+
+h2 {
+    margin-top: 40px;
+    color: #ffffff;
+    font-weight: 400; /* Normal weight for sub-heading */
+}
+
+table {
+    width: 100%; /* Table should take full width */
+    max-width: 1000px; /* Keep max width for desktop */
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #1e1e1e;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    overflow: hidden;
+    table-layout: fixed; /* Helps control column widths */
+}
+
+thead {
+    background-color: #333333; /* Darker header background */
+    color: #ffffff;
+    font-size: 0.85em; /* Slightly smaller header text */
+    text-transform: uppercase; /* Uppercase headers */
+    letter-spacing: 0.5px;
+}
+
+th, td {
+    padding: 12px 8px; /* Increased base padding slightly */
+    text-align: left;
+    border-bottom: 1px solid #383838;
+    word-wrap: break-word;
+    font-size: 0.9em;
+}
+
+th {
+    font-weight: 500; /* Medium weight header */
+}
+
+tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+/* Zebra striping - very subtle */
+tbody tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.02); /* Subtle light overlay */
+}
+
+/* Hover effect */
+tbody tr:hover {
+    background-color: #2f2f2f; /* More noticeable hover */
+}
+
+/* Override hover/zebra for rows with team colors, but maybe add brightness? */
+tbody tr[style*="background-color"]:hover {
+    filter: brightness(1.2); /* Brighten team color on hover */
+}
+
+tbody tr:last-child td {
+    border-bottom: none; /* Remove border from last row */
+}
+
+/* Column Width Adjustments */
+td:nth-child(1), /* Rank */
+th:nth-child(1) {
+    width: 10%; /* Adjusted width */
+    text-align: center;
+    font-weight: 600; /* Bold Rank */
+}
+
+td:nth-child(2), /* Team */
+th:nth-child(2) {
+    width: 28%; /* Reduced width significantly */
+    font-weight: 500;
+}
+
+td:nth-child(3),
+td:nth-child(4),
+td:nth-child(5),
+td:nth-child(6),
+td:nth-child(7),
+td:nth-child(8),
+th:nth-child(3),
+th:nth-child(4),
+th:nth-child(5),
+th:nth-child(6),
+th:nth-child(7),
+th:nth-child(8) {
+    text-align: center;
+}
+
+/* P, W, L, N/R columns */
+td:nth-child(3), th:nth-child(3),
+td:nth-child(4), th:nth-child(4),
+td:nth-child(5), th:nth-child(5),
+td:nth-child(6), th:nth-child(6) {
+     width: 7%; /* Small width */
+}
+
+/* Points column */
+td:nth-child(7), th:nth-child(7) {
+    font-weight: bold;
+    color: #ffffff;
+    width: 8%; /* Adjusted width */
+}
+
+/* NRR column */
+td:nth-child(8), th:nth-child(8) {
+    font-family: 'Roboto Mono', monospace;
+    width: 15%;
+    font-size: 0.95em; /* Slightly larger NRR font */
+}
+
+/* Media Query for Smaller Screens */
+@media (max-width: 600px) {
+    th, td {
+        padding: 8px 3px; /* Keep tight padding for mobile */
+        font-size: 0.8em;
+    }
+
+    h1 {
+        font-size: 1.8em; /* Reduced size from previous query */
+        margin-bottom: 20px;
+    }
+
+    h2 {
+        font-size: 1.3em;
+    }
+
+    td:nth-child(2), /* Team */
+    th:nth-child(2) {
+        width: 25%; /* Slightly smaller team column */
+    }
+
+     td:nth-child(8), /* NRR */
+     th:nth-child(8) {
+         font-size: 0.75em; /* Keep smaller NRR on mobile */
+     }
+}
+
+/* Matches Simulation Section */
+.matches-container {
+    width: 100%; /* Full width on mobile */
+    max-width: 1000px; /* Max width for desktop */
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Adjust minmax for smaller screens */
+    gap: 15px;
+}
+
+.match-card {
+    background-color: #252525; /* Slightly different dark shade */
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    border: 1px solid #484848; /* Lighter border */
+    position: relative;
+    /* Add fade-in animation */
+    opacity: 0; /* Start hidden */
+    animation: fadeInSlideUp 0.6s ease-out forwards;
+    /* Stagger based on order could be added via JS */
+    animation-delay: 0.2s; /* Slightly later delay */
+}
+
+.match-info {
+    font-size: 0.85em; /* Smaller date */
+    color: #bdbdbd; /* Lighter grey */
+    margin-bottom: 10px;
+}
+
+.teams {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.team-button {
+    padding: 8px 12px;
+    background-color: #333333;
+    color: #ececec; /* Use new main text color */
+    border: 1px solid #555555;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    flex-grow: 1;
+    margin: 0 5px;
+    text-align: center;
+    font-size: 0.9em;
+}
+
+.team-button:hover {
+    background-color: #444444;
+    border-color: #777777;
+}
+
+/* Removed the default blue background for selected buttons */
+
+.score-toggle-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #bdbdbd;
+    cursor: pointer;
+    transition: transform 0.3s ease, color 0.2s ease;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    border-radius: 50%;
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+}
+
+.score-toggle-icon:focus,
+.score-toggle-icon:focus-visible {
+    outline: none; /* Remove focus outline */
+}
+
+.score-toggle-icon svg {
+    display: block; /* Remove extra space below SVG */
+    width: 1em; /* Control size relative to potential font size */
+    height: 1em;
+}
+
+.score-toggle-icon:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1); /* Slight background on hover */
+}
+
+/* Rotated state for the icon */
+.score-toggle-icon.icon-rotated {
+    transform: rotate(180deg);
+}
+
+.score-inputs {
+    /* display: none; Removed, control via max-height */
+    max-height: 0; /* Initially hidden */
+    overflow: hidden; /* Hide content that overflows */
+    margin-top: 0; /* Remove top margin when hidden */
+    border-top: 1px solid transparent; /* Keep space but make border transparent */
+    padding-top: 0; /* Remove top padding when hidden */
+    padding-bottom: 0; /* Add bottom padding control */
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 15px;
+    align-items: center;
+    transition: max-height 0.4s ease-in-out,
+                margin-top 0.4s ease-in-out,
+                padding-top 0.4s ease-in-out,
+                padding-bottom 0.4s ease-in-out,
+                border-color 0.4s ease-in-out; /* Smooth transition */
+}
+
+.score-inputs.visible {
+    max-height: 200px; /* Set to height large enough to contain content */
+    margin-top: 10px;
+    border-color: #505050; /* Make border visible */
+    padding-top: 10px;
+    padding-bottom: 10px; /* Add padding when visible */
+}
+
+.score-inputs label {
+    font-size: 0.8em; /* Smaller labels */
+    color: #bdbdbd; /* Lighter grey */
+    grid-column: 1 / -1; /* Span full width for labels like 'Team 1 Score' */
+    margin-bottom: -5px; /* Reduce space below label */
+}
+
+.score-inputs label.inline-label {
+    grid-column: auto; /* Reset span for inline labels if needed */
+    margin-bottom: 0;
+    text-align: right;
+    padding-right: 5px;
+}
+
+.score-inputs input {
+    width: 100%;
+    padding: 6px 8px;
+    background-color: #303030; /* Slightly lighter input background */
+    border: 1px solid #505050; /* Adjusted border */
+    color: #ececec; /* Use new main text color */
+    border-radius: 4px;
+    font-size: 0.9em;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif; /* Ensure input uses the font */
+}
+
+.score-inputs input:focus {
+    outline: none;
+    border-color: #4db6ac; /* Teal accent color */
+    box-shadow: 0 0 0 2px rgba(77, 182, 172, 0.3); /* Teal glow */
+}
+
+/* Apply button styles removed */
+
+/* Footer Styles */
+footer {
+    width: 100%;
+    max-width: 1000px;
+    margin-top: 50px; /* Increased top margin */
+    padding: 25px 0; /* Increased padding */
+    border-top: 1px solid #383838;
+    text-align: center;
+    font-size: 0.85em;
+    color: #bdbdbd;
+    line-height: 1.6;
+}
+
+footer p {
+    margin: 0;
+}
+
+footer a {
+    color: #4db6ac; /* Use accent color for links */
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+footer a:hover {
+    color: #80cbc4; /* Lighter accent on hover */
+    text-decoration: underline;
+}
+
+/* Matches Simulation Section Header */
+.section-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 1000px;
+    margin-top: 40px;
+    position: relative; /* For potential absolute positioning inside */
+}
+
+.section-header h2 {
+    margin: 0; /* Remove default margin from h2 */
+    flex-grow: 1; /* Allow h2 to take available space */
+    text-align: center; /* Keep centered */
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    color: #bdbdbd; /* Match other icons */
+    padding: 5px;
+    margin-left: 10px; /* Space between heading and button */
+    cursor: pointer;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease, background-color 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.icon-button:focus, .icon-button:focus-visible {
+    outline: none;
+}
+
+.icon-button svg {
+    width: 1.1em;
+    height: 1.1em;
+}
+
+.icon-button:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Last Updated Text */
+.last-updated {
+    position: absolute; /* Position relative to body */
+    top: 10px;
+    right: 15px;
+    font-size: 0.75em;
+    color: #888888; /* Dim grey color */
+    z-index: 10; /* Ensure it's above other content if needed */
+} 
