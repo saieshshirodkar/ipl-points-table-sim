@@ -218,7 +218,7 @@ td:nth-child(8), th:nth-child(8) {
 
 .match-card {
     background-color: #252525; /* Slightly different dark shade */
-    padding: 15px;
+    padding: 15px 20px; /* Slightly more horizontal padding */
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     border: 1px solid #484848; /* Lighter border */
@@ -228,33 +228,45 @@ td:nth-child(8), th:nth-child(8) {
     animation: fadeInSlideUp 0.6s ease-out forwards;
     /* Stagger based on order could be added via JS */
     animation-delay: 0.2s; /* Slightly later delay */
+    transition: box-shadow 0.2s ease-out, transform 0.2s ease-out; /* Add transition here */
+}
+
+/* Match Card Hover effect */
+.match-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); /* Slightly stronger shadow on hover */
+    transform: translateY(-2px); /* Subtle lift */
+    /* Removed transition from here, added to base style */
 }
 
 .match-info {
-    font-size: 0.85em; /* Smaller date */
-    color: #bdbdbd; /* Lighter grey */
-    margin-bottom: 10px;
+    font-size: 0.8em; /* Slightly smaller */
+    color: #a0a0a0; /* Dimmer grey */
+    margin-bottom: 12px; /* Increased space */
+    text-align: center; /* Center date info */
 }
 
 .teams {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around; /* Better spacing than space-between */
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 15px; /* Increased space */
+    font-weight: 500; /* Slightly bolder text in this div */
 }
 
 .team-button {
-    padding: 8px 12px;
+    padding: 8px 10px; /* Adjusted padding */
     background-color: #333333;
     color: #ececec; /* Use new main text color */
     border: 1px solid #555555;
     border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-    flex-grow: 1;
-    margin: 0 5px;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease-out;
+    flex-basis: 40%; /* Give buttons a base width */
+    flex-grow: 0; /* Don't let them grow excessively */
+    margin: 0 0px; /* Remove side margin, handled by justify-content */
     text-align: center;
-    font-size: 0.9em;
+    font-size: 0.95em; /* Slightly larger font */
+    font-weight: 500; /* Medium weight */
 }
 
 .team-button:hover {
@@ -262,21 +274,44 @@ td:nth-child(8), th:nth-child(8) {
     border-color: #777777;
 }
 
+.team-button:active {
+    transform: scale(0.98); /* Slight press effect */
+}
+
+/* Style for the selected team button */
+.team-button.selected {
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.1); /* Subtle glow */
+}
+
 /* No Result button styling */
 .no-result-button {
-    margin-top: 10px;
-    width: 100%;
-    background-color: #3A3A3A;
+    /* No longer a main button, styled as dropdown item */
+    /* margin-top: 10px; */
+    /* width: 100%; */
+    /* background-color: #3A3A3A; */
+    text-align: left; /* Align text left in dropdown */
 }
 
-.no-result-button:hover {
+/* .no-result-button:hover {
     background-color: #4A4A4A;
-}
+} */
 
-.no-result-button.selected {
+/* Remove specific selected style for button, use card style */
+/* .no-result-button.selected {
     background-color: #5A5A5A;
     color: #FFFFFF;
     border-color: #5A5A5A;
+} */
+
+/* Card style when No Result is selected */
+.match-card.no-result-selected {
+    border-left: 4px solid #777777; /* Gray indicator */
+    background-color: #2a2a2a; /* Slightly different background */
+}
+
+.match-card.no-result-selected .match-options-icon {
+     color: #ffffff; /* Make icon brighter when selected */
+     background-color: rgba(255, 255, 255, 0.1); /* Add background */
 }
 
 /* Removed the default blue background for selected buttons */
@@ -326,6 +361,7 @@ td:nth-child(8), th:nth-child(8) {
     border-top: 1px solid transparent; /* Keep space but make border transparent */
     padding-top: 0; /* Remove top padding when hidden */
     padding-bottom: 0; /* Add bottom padding control */
+    display: grid; /* Changed from previous */
     grid-template-columns: 1fr 1fr;
     gap: 10px 15px;
     align-items: center;
@@ -333,7 +369,15 @@ td:nth-child(8), th:nth-child(8) {
                 margin-top 0.4s ease-in-out,
                 padding-top 0.4s ease-in-out,
                 padding-bottom 0.4s ease-in-out,
-                border-color 0.4s ease-in-out; /* Smooth transition */
+                border-color 0.4s ease-in-out,
+                opacity 0.4s ease-in-out; /* Add opacity transition */
+    opacity: 1; /* Start fully opaque */
+}
+
+/* Style for disabled score input section */
+.score-inputs.disabled {
+    opacity: 0.5;
+    pointer-events: none; /* Optional: prevent clicks inside */
 }
 
 .score-inputs.visible {
@@ -460,4 +504,86 @@ footer a:hover {
     font-size: 0.75em;
     color: #888888; /* Dim grey color */
     z-index: 10; /* Ensure it's above other content if needed */
+}
+
+/* Match Options Icon */
+.match-options-icon {
+    position: absolute;
+    top: 8px; /* Adjust position */
+    left: 8px; /* Adjust position */
+    color: #bdbdbd;
+    cursor: pointer;
+    transition: color 0.2s ease, background-color 0.2s ease;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    border-radius: 50%;
+    -webkit-tap-highlight-color: transparent;
+    z-index: 3; /* Above team buttons */
+}
+
+.match-options-icon:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Match Options Dropdown */
+.match-options-dropdown {
+    display: none; /* Hidden by default */
+    position: absolute;
+    top: 35px; /* Position below icon */
+    left: 8px; /* Align with icon */
+    background-color: #383838; /* Slightly darker dropdown */
+    border: 1px solid #555555; /* Match button border */
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    z-index: 10; /* Above other card elements */
+    min-width: 120px;
+    overflow: hidden; /* Clip rounded corners */
+}
+
+.match-options-dropdown.visible {
+    display: block;
+    /* Add animation for dropdown opening */
+    animation: fadeInDropdown 0.2s ease-out forwards;
+}
+
+/* Dropdown Item */
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    color: #ececec;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #444444;
+}
+
+/* Keyframe for dropdown */
+@keyframes fadeInDropdown {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Style for the 'vs' text */
+.vs-text {
+    color: #888888; /* Dim gray */
+    font-size: 0.9em;
+    font-weight: 400; /* Lighter weight */
+    margin: 0 8px; /* Add some horizontal space around it */
 } 

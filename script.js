@@ -566,7 +566,6 @@ function updateTableFromSelections() {
 // Function to render the matches section
 function renderMatches() {
     matchesContainer.innerHTML = ''; // Clear existing matches
-    // Don't reset matchSelections here, keep loaded ones
 
     remainingMatchesData.forEach(match => {
         const teamsArray = match.teams.split(' vs ');
@@ -581,11 +580,23 @@ function renderMatches() {
 
         const scoreToggleIcon = document.createElement('span');
         scoreToggleIcon.classList.add('score-toggle-icon');
-        scoreToggleIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16">
-            <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
-        </svg>`;
+        scoreToggleIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>`;
         scoreToggleIcon.title = 'Toggle Score Input';
         matchCard.appendChild(scoreToggleIcon);
+
+        // Dropdown Menu Icon
+        const dropdownIcon = document.createElement('span');
+        dropdownIcon.classList.add('match-options-icon');
+        dropdownIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16">
+          <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+        </svg>`;
+        dropdownIcon.title = 'Match Options';
+        matchCard.appendChild(dropdownIcon);
+
+        // Dropdown Menu Container
+        const dropdownMenu = document.createElement('div');
+        dropdownMenu.classList.add('match-options-dropdown');
+
         const matchInfo = document.createElement('div');
         matchInfo.classList.add('match-info');
         matchInfo.textContent = `Match ${match.match_number} - ${match.date}`;
@@ -600,11 +611,12 @@ function renderMatches() {
         team2Button.textContent = team2ShortName;
         team2Button.dataset.teamName = team2FullName;
         
-        // Add No Result button
+        // No Result button (inside dropdown)
         const noResultButton = document.createElement('button');
-        noResultButton.classList.add('team-button', 'no-result-button');
+        noResultButton.classList.add('dropdown-item', 'no-result-button');
         noResultButton.textContent = 'No Result';
         noResultButton.dataset.noResult = 'true';
+        dropdownMenu.appendChild(noResultButton);
 
         // --- Reflect loaded selection state --- 
         const selectedWinner = matchSelections[match.match_number];
@@ -616,47 +628,65 @@ function renderMatches() {
                 team2Button.classList.add('selected');
                 applyTeamColorsToButton(team2Button, teamColorMap[team2FullName]);
             } else if (selectedWinner === 'NO_RESULT') {
-                noResultButton.classList.add('selected');
-                applyNoResultButtonStyle(noResultButton);
+                // Mark the card or icon instead of the button now
+                matchCard.classList.add('no-result-selected'); 
             }
         }
         // --- End reflect loaded state ---
 
-        // Event listener for team selection
+        // Event listener for team/no-result selection
         [team1Button, team2Button, noResultButton].forEach(button => {
-            button.addEventListener('click', () => {
+            button.addEventListener('click', (event) => {
+                event.stopPropagation(); // Prevent closing dropdown immediately
                 const currentMatchNumber = match.match_number;
                 const isNoResult = button.dataset.noResult === 'true';
                 const selectedTeamFullName = isNoResult ? 'NO_RESULT' : button.dataset.teamName;
-                const otherButtons = [team1Button, team2Button, noResultButton].filter(b => b !== button);
                 
+                // Get score inputs div for this card
+                const scoreInputsDiv = matchCard.querySelector('.score-inputs');
+                const scoreInputs = scoreInputsDiv.querySelectorAll('input');
+
+                // Deselect all buttons/states for this match
+                matchCard.classList.remove('no-result-selected');
+                scoreInputs.forEach(input => input.disabled = false); // Re-enable inputs first
+                scoreInputsDiv.classList.remove('disabled'); // Remove disabled class from container
+                [team1Button, team2Button].forEach(btn => {
+                    btn.classList.remove('selected');
+                    resetButtonColors(btn);
+                });
+
                 // Update selection state and button appearance
-                if (button.classList.contains('selected')) {
-                    button.classList.remove('selected');
-                    if (isNoResult) {
-                        resetButtonColors(button);
-                    } else {
-                        resetButtonColors(button);
-                    }
+                if (matchSelections[currentMatchNumber] === selectedTeamFullName) {
+                    // Clicked the already selected option, deselect
                     delete matchSelections[currentMatchNumber];
+                    // Inputs are already re-enabled above
                 } else {
-                    button.classList.add('selected');
-                    otherButtons.forEach(b => {
-                        b.classList.remove('selected');
-                        resetButtonColors(b);
-                    });
-                    
-                    if (isNoResult) {
-                        applyNoResultButtonStyle(button);
-                    } else {
-                        const colors = teamColorMap[selectedTeamFullName];
-                        applyTeamColorsToButton(button, colors);
-                    }
+                     // Select the new option
                     matchSelections[currentMatchNumber] = selectedTeamFullName;
+                    if (isNoResult) {
+                        matchCard.classList.add('no-result-selected');
+                        // Disable score inputs and potentially close the section
+                        scoreInputs.forEach(input => input.disabled = true);
+                        scoreInputsDiv.classList.add('disabled');
+                        // Optionally close the score section if open
+                        // if (scoreInputsDiv.classList.contains('visible')) {
+                        //     scoreInputsDiv.classList.remove('visible');
+                        //     matchCard.querySelector('.score-toggle-icon').classList.remove('icon-rotated');
+                        // }
+                    } else {
+                        const clickedTeamButton = (button === team1Button) ? team1Button : team2Button;
+                        const colors = teamColorMap[selectedTeamFullName];
+                        clickedTeamButton.classList.add('selected');
+                        applyTeamColorsToButton(clickedTeamButton, colors);
+                        // Ensure inputs are enabled (already done above, but safe)
+                        scoreInputs.forEach(input => input.disabled = false);
+                        scoreInputsDiv.classList.remove('disabled');
+                    }
                 }
 
-                saveSelections(); // <-- Save selections on change
-                updateTableFromSelections(); // Update table immediately
+                closeAllDropdowns(); // Close dropdown after selection
+                saveSelections(); 
+                updateTableFromSelections(); 
             });
         });
 
@@ -681,17 +711,28 @@ function renderMatches() {
         t2OversInput.type = 'text'; t2OversInput.name = 'team2Overs'; t2OversInput.placeholder = 'Overs (e.g., 18.2)'; t2OversInput.pattern = "^\\d{1,2}(\\.[0-5])?$";
         scoreInputsDiv.appendChild(t2OversInput);
         
+        const vsTextContainer = document.createElement('span');
+        vsTextContainer.classList.add('vs-text');
+        vsTextContainer.textContent = 'vs';
+        
         teamsDiv.appendChild(team1Button);
-        teamsDiv.appendChild(document.createTextNode(' vs '));
+        teamsDiv.appendChild(vsTextContainer); // Add the styled span
         teamsDiv.appendChild(team2Button);
-        teamsDiv.appendChild(document.createElement('br')); // Add line break
-        teamsDiv.appendChild(noResultButton); // Add No Result button
         
         matchCard.appendChild(matchInfo);
         matchCard.appendChild(teamsDiv);
+        matchCard.appendChild(dropdownMenu); // Add dropdown to card
         matchCard.appendChild(scoreInputsDiv); 
         matchesContainer.appendChild(matchCard);
 
+        // Event listener for dropdown icon
+        dropdownIcon.addEventListener('click', (event) => {
+            event.stopPropagation(); // Prevent body click listener
+            closeAllDropdowns(dropdownMenu); // Close others before opening
+            dropdownMenu.classList.toggle('visible');
+        });
+
+        // Event listener for score toggle icon (remains the same)
         scoreToggleIcon.addEventListener('click', () => {
             const currentScoreDiv = matchCard.querySelector('.score-inputs');
             const isOpening = !currentScoreDiv.classList.contains('visible');
@@ -708,6 +749,23 @@ function renderMatches() {
                 scoreToggleIcon.classList.remove('icon-rotated');
             }
         });
+
+        // Check initial state on load
+        if (selectedWinner === 'NO_RESULT') {
+            matchCard.classList.add('no-result-selected');
+            scoreInputsDiv.classList.add('disabled');
+            scoreInputsDiv.querySelectorAll('input').forEach(input => input.disabled = true);
+        }
+    });
+}
+
+// Function to close all open dropdowns
+function closeAllDropdowns(excludeDropdown = null) {
+    const openDropdowns = document.querySelectorAll('.match-options-dropdown.visible');
+    openDropdowns.forEach(dropdown => {
+        if (dropdown !== excludeDropdown) {
+            dropdown.classList.remove('visible');
+        }
     });
 }
 
@@ -730,13 +788,6 @@ function resetButtonColors(button) {
     button.style.borderColor = '';
 }
 
-// Helper function to style No Result button
-function applyNoResultButtonStyle(button) {
-    button.style.backgroundColor = '#5A5A5A'; // Gray background
-    button.style.color = '#FFFFFF'; // White text
-    button.style.borderColor = '#5A5A5A'; // Gray border
-}
-
 // --- Initial Setup ---
 document.addEventListener('DOMContentLoaded', () => {
     loadSelections();
@@ -751,6 +802,11 @@ document.addEventListener('DOMContentLoaded', () => {
         mainHeading.addEventListener('click', () => location.reload());
     }
 
+    // Add body click listener to close dropdowns
+    document.body.addEventListener('click', () => {
+        closeAllDropdowns();
+    });
+
     // --- Add Reset Button Listener --- 
     const resetButton = document.getElementById('resetSimulationBtn');
     if (resetButton) {
@@ -761,7 +817,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Clear score input fields
             const scoreInputs = matchesContainer.querySelectorAll('.score-inputs input');
-            scoreInputs.forEach(input => input.value = '');
+            scoreInputs.forEach(input => { 
+                input.value = ''; 
+                input.disabled = false; // Ensure inputs are re-enabled
+            });
+            const scoreInputContainers = matchesContainer.querySelectorAll('.score-inputs');
+            scoreInputContainers.forEach(container => container.classList.remove('disabled')); // Remove disabled class
 
             // Close any open score sections
             const allVisibleScoreDivs = matchesContainer.querySelectorAll('.score-inputs.visible');
@@ -775,9 +836,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.classList.remove('selected');
                 resetButtonColors(button); // Use helper to reset styles
             });
+            
+            // Remove no-result state from cards
+            const noResultCards = matchesContainer.querySelectorAll('.match-card.no-result-selected');
+            noResultCards.forEach(card => card.classList.remove('no-result-selected'));
 
             // Update table to reflect reset state
             updateTableFromSelections(); 
+            closeAllDropdowns(); // Close dropdowns on reset
         });
     }
     // --- End Reset Button Listener --- 
