@@ -467,12 +467,32 @@ function updateTableFromSelections() {
 
     // Process match selections and update cumulative stats
     for (const matchNumber in matchSelections) {
-        const winningTeamName = matchSelections[matchNumber];
+        const selectedResult = matchSelections[matchNumber];
         const matchInfo = remainingMatchesData.find(m => m.match_number == matchNumber);
         if (!matchInfo) continue;
         const teamsArray = matchInfo.teams.split(' vs ');
         const team1FullName = teamsArray[0].trim();
         const team2FullName = teamsArray[1].trim();
+        
+        const team1Data = updatedPointsData.find(t => t.team === team1FullName);
+        const team2Data = updatedPointsData.find(t => t.team === team2FullName);
+        
+        if (!team1Data || !team2Data) continue;
+        
+        // Handle No Result case
+        if (selectedResult === 'NO_RESULT') {
+            team1Data.played += 1;
+            team1Data.no_result += 1;
+            team1Data.points += 1;
+            
+            team2Data.played += 1;
+            team2Data.no_result += 1;
+            team2Data.points += 1;
+            continue;
+        }
+
+        // Handle normal win/loss case
+        const winningTeamName = selectedResult;
         const losingTeamName = (winningTeamName === team1FullName) ? team2FullName : team1FullName;
         const winnerData = updatedPointsData.find(t => t.team === winningTeamName);
         const loserData = updatedPointsData.find(t => t.team === losingTeamName);
@@ -579,6 +599,12 @@ function renderMatches() {
         team2Button.classList.add('team-button');
         team2Button.textContent = team2ShortName;
         team2Button.dataset.teamName = team2FullName;
+        
+        // Add No Result button
+        const noResultButton = document.createElement('button');
+        noResultButton.classList.add('team-button', 'no-result-button');
+        noResultButton.textContent = 'No Result';
+        noResultButton.dataset.noResult = 'true';
 
         // --- Reflect loaded selection state --- 
         const selectedWinner = matchSelections[match.match_number];
@@ -589,28 +615,43 @@ function renderMatches() {
             } else if (selectedWinner === team2FullName) {
                 team2Button.classList.add('selected');
                 applyTeamColorsToButton(team2Button, teamColorMap[team2FullName]);
+            } else if (selectedWinner === 'NO_RESULT') {
+                noResultButton.classList.add('selected');
+                applyNoResultButtonStyle(noResultButton);
             }
         }
         // --- End reflect loaded state ---
 
         // Event listener for team selection
-        [team1Button, team2Button].forEach(button => {
+        [team1Button, team2Button, noResultButton].forEach(button => {
             button.addEventListener('click', () => {
                 const currentMatchNumber = match.match_number;
-                const selectedTeamFullName = button.dataset.teamName;
-                const opponentButton = (button === team1Button) ? team2Button : team1Button;
-                const colors = teamColorMap[selectedTeamFullName];
-
+                const isNoResult = button.dataset.noResult === 'true';
+                const selectedTeamFullName = isNoResult ? 'NO_RESULT' : button.dataset.teamName;
+                const otherButtons = [team1Button, team2Button, noResultButton].filter(b => b !== button);
+                
                 // Update selection state and button appearance
                 if (button.classList.contains('selected')) {
                     button.classList.remove('selected');
-                    resetButtonColors(button);
+                    if (isNoResult) {
+                        resetButtonColors(button);
+                    } else {
+                        resetButtonColors(button);
+                    }
                     delete matchSelections[currentMatchNumber];
                 } else {
                     button.classList.add('selected');
-                    opponentButton.classList.remove('selected');
-                    resetButtonColors(opponentButton);
-                    applyTeamColorsToButton(button, colors);
+                    otherButtons.forEach(b => {
+                        b.classList.remove('selected');
+                        resetButtonColors(b);
+                    });
+                    
+                    if (isNoResult) {
+                        applyNoResultButtonStyle(button);
+                    } else {
+                        const colors = teamColorMap[selectedTeamFullName];
+                        applyTeamColorsToButton(button, colors);
+                    }
                     matchSelections[currentMatchNumber] = selectedTeamFullName;
                 }
 
@@ -643,6 +684,8 @@ function renderMatches() {
         teamsDiv.appendChild(team1Button);
         teamsDiv.appendChild(document.createTextNode(' vs '));
         teamsDiv.appendChild(team2Button);
+        teamsDiv.appendChild(document.createElement('br')); // Add line break
+        teamsDiv.appendChild(noResultButton); // Add No Result button
         
         matchCard.appendChild(matchInfo);
         matchCard.appendChild(teamsDiv);
@@ -685,6 +728,13 @@ function resetButtonColors(button) {
     button.style.backgroundColor = '';
     button.style.color = '';
     button.style.borderColor = '';
+}
+
+// Helper function to style No Result button
+function applyNoResultButtonStyle(button) {
+    button.style.backgroundColor = '#5A5A5A'; // Gray background
+    button.style.color = '#FFFFFF'; // White text
+    button.style.borderColor = '#5A5A5A'; // Gray border
 }
 
 // --- Initial Setup ---
