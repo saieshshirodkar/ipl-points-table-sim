@@ -73,147 +73,130 @@ h2 {
     font-weight: 400; /* Normal weight for sub-heading */
 }
 
-table {
-    width: 100%; /* Table should take full width */
-    max-width: 1000px; /* Keep max width for desktop */
-    border-collapse: collapse;
-    margin-top: 20px;
-    background-color: #1e1e1e;
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
-    border-radius: 8px;
-    overflow: hidden;
-    table-layout: fixed; /* Helps control column widths */
+/* Table Container for responsive layout */
+.table-container {
+  max-width: 1000px;
+  margin: 20px auto;
+  overflow-x: auto;
 }
 
-thead {
-    background-color: #333333; /* Darker header background */
-    color: #ffffff;
-    font-size: 0.85em; /* Slightly smaller header text */
-    text-transform: uppercase; /* Uppercase headers */
-    letter-spacing: 0.5px;
+#pointsTable {
+  width: 100%;
+  table-layout: fixed;
+}
+#pointsTable th:nth-child(1), #pointsTable td:nth-child(1) { width: 6%; }
+#pointsTable th:nth-child(2), #pointsTable td:nth-child(2) { width: 25%; text-align: left; padding-left: 10px; }
+#pointsTable th:nth-child(3), #pointsTable td:nth-child(3),
+#pointsTable th:nth-child(4), #pointsTable td:nth-child(4),
+#pointsTable th:nth-child(5), #pointsTable td:nth-child(5),
+#pointsTable th:nth-child(6), #pointsTable td:nth-child(6) { width: 8%; }
+#pointsTable th:nth-child(7), #pointsTable td:nth-child(7) { width: 8%; }
+#pointsTable th:nth-child(8), #pointsTable td:nth-child(8) { width: 14%; }
+#pointsTable th:nth-child(9), #pointsTable td:nth-child(9) { width: 14%; }
+
+/* Points Table Styles */
+#pointsTable {
+  border-collapse: collapse;
+  background-color: #1e1e1e;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-th, td {
-    padding: 12px 8px; /* Increased base padding slightly */
-    text-align: left;
-    border-bottom: 1px solid #383838;
-    word-wrap: break-word;
-    font-size: 0.9em;
+#pointsTable th {
+  background: linear-gradient(90deg, #2a2a2a, #3a3a3a);
+  color: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 12px 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
-th {
-    font-weight: 500; /* Medium weight header */
+#pointsTable th:hover {
+  background: linear-gradient(90deg, #3a3a3a, #4a4a4a);
 }
 
-tbody tr {
-    transition: background-color 0.2s ease;
+#pointsTable thead th:first-child {
+  border-top-left-radius: 8px;
 }
 
-/* Zebra striping - very subtle */
-tbody tr:nth-child(even) {
-    background-color: rgba(255, 255, 255, 0.02); /* Subtle light overlay */
+#pointsTable thead th:last-child {
+  border-top-right-radius: 8px;
 }
 
-/* Hover effect */
-tbody tr:hover {
-    background-color: #2f2f2f; /* More noticeable hover */
+#pointsTable th, #pointsTable td {
+  padding: 12px 8px;
+  text-align: center;
 }
 
-/* Override hover/zebra for rows with team colors, but maybe add brightness? */
-tbody tr[style*="background-color"]:hover {
-    filter: brightness(1.2); /* Brighten team color on hover */
+#pointsTable td {
+  border-bottom: 1px solid #333;
 }
 
-tbody tr:last-child td {
-    border-bottom: none; /* Remove border from last row */
+#pointsTable tbody tr:nth-child(even) td {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
-/* Column Width Adjustments */
-td:nth-child(1), /* Rank */
-th:nth-child(1) {
-    width: 10%; /* Adjusted width */
-    text-align: center;
-    font-weight: 600; /* Bold Rank */
+#pointsTable tbody tr:hover td {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
-td:nth-child(2), /* Team */
-th:nth-child(2) {
-    width: 28%; /* Reduced width significantly */
-    font-weight: 500;
+#pointsTable tbody tr {
+  transition: transform 0.2s ease, background 0.2s ease;
 }
 
-td:nth-child(3),
-td:nth-child(4),
-td:nth-child(5),
-td:nth-child(6),
-td:nth-child(7),
-td:nth-child(8),
-th:nth-child(3),
-th:nth-child(4),
-th:nth-child(5),
-th:nth-child(6),
-th:nth-child(7),
-th:nth-child(8) {
-    text-align: center;
+#pointsTable tbody tr:hover {
+  transform: translateY(-2px);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* P, W, L, N/R columns */
-td:nth-child(3), th:nth-child(3),
-td:nth-child(4), th:nth-child(4),
-td:nth-child(5), th:nth-child(5),
-td:nth-child(6), th:nth-child(6) {
-     width: 7%; /* Small width */
+/* Ensures the container scroll bar looks neat */
+.table-container::-webkit-scrollbar {
+  height: 8px;
+}
+.table-container::-webkit-scrollbar-track {
+  background: #222;
+}
+.table-container::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
 }
 
-/* Points column */
-td:nth-child(7), th:nth-child(7) {
-    font-weight: bold;
-    color: #ffffff;
-    width: 8%; /* Adjusted width */
+/* For Firefox */
+.table-container {
+  scrollbar-width: thin;
+  scrollbar-color: #555 #222;
 }
 
-/* NRR column */
-td:nth-child(8), th:nth-child(8) {
-    font-family: 'Roboto Mono', monospace;
-    width: 15%;
-    font-size: 0.95em; /* Slightly larger NRR font */
-}
-
-/* Media Query for Smaller Screens */
+/* Mobile table adjustments */
 @media (max-width: 600px) {
-    th, td {
-        padding: 8px 3px; /* Keep tight padding for mobile */
-        font-size: 0.8em;
-    }
-
-    h1 {
-        font-size: 1.8em; /* Reduced size from previous query */
-        margin-bottom: 20px;
-    }
-
-    h2 {
-        font-size: 1.3em;
-    }
-
-    td:nth-child(2), /* Team */
-    th:nth-child(2) {
-        width: 25%; /* Slightly smaller team column */
-    }
-
-     td:nth-child(8), /* NRR */
-     th:nth-child(8) {
-         font-size: 0.75em; /* Keep smaller NRR on mobile */
-     }
+  .table-container {
+    margin: 10px 0;
+  }
+  #pointsTable th,
+  #pointsTable td {
+    padding: 6px 4px;
+    font-size: 0.75em;
+  }
+  /* Align team name to left for readability */
+  #pointsTable td:nth-child(2),
+  #pointsTable th:nth-child(2) {
+    text-align: left;
+  }
 }
 
-/* Matches Simulation Section */
 .matches-container {
-    width: 100%; /* Full width on mobile */
-    max-width: 1000px; /* Max width for desktop */
-    margin-top: 10px;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Adjust minmax for smaller screens */
-    gap: 15px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    max-width: 1000px;
+    margin: 8px auto 0; /* Keep existing margin */
+    /* Add padding-top to account for sticky header height */
+    /* Estimate table header height + top offset ~ 50-70px? Add some buffer */
+    padding-top: 80px; /* Increased padding-top */
 }
 
 .match-card {
@@ -222,7 +205,6 @@ td:nth-child(8), th:nth-child(8) {
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     border: 1px solid #484848; /* Lighter border */
-    position: relative;
     /* Add fade-in animation */
     opacity: 0; /* Start hidden */
     animation: fadeInSlideUp 0.6s ease-out forwards;
@@ -458,6 +440,8 @@ footer a:hover {
     width: 100%;
     max-width: 1000px;
     margin-top: 40px;
+    margin-bottom: 0; /* Remove bottom gap */
+    padding-bottom: 0;
     position: relative; /* For potential absolute positioning inside */
 }
 
@@ -586,4 +570,15 @@ footer a:hover {
     font-size: 0.9em;
     font-weight: 400; /* Lighter weight */
     margin: 0 8px; /* Add some horizontal space around it */
-} 
+}
+
+/* Table Row Highlighting */
+tr.selected-row {
+    background-color: rgba(255, 255, 255, 0.15) !important; /* Slightly more prominent highlight */
+    box-shadow: inset 3px 0 0 0 #007bff; /* Blue indicator line on the left */
+}
+
+/* Match Card Filtering */
+.match-card.hidden {
+    display: none; /* Hide the card completely */
+}
