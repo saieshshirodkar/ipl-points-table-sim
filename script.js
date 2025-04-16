@@ -252,21 +252,23 @@ function estimateInitialStats(data) {
 }
 
 // Simulate qualification probabilities via Monte Carlo
-function simulateQualification(trials = 10000) {
+function simulateQualification(trials = 20000) {
     const counts = {};
     initialPointsData.forEach(team => counts[team.team] = 0);
     for (let i = 0; i < trials; i++) {
         // Deep copy initial state
         const simData = JSON.parse(JSON.stringify(initialPointsData));
-        // Simulate each remaining match randomly
+        // Simulate each remaining match randomly with unbiased randomness
         remainingMatchesData.forEach(match => {
             const [t1Name, t2Name] = match.teams.split(' vs ').map(s => s.trim());
             const t1 = simData.find(t => t.team === t1Name);
             const t2 = simData.find(t => t.team === t2Name);
             if (!t1 || !t2) return;
             t1.played++; t2.played++;
-            if (Math.random() < 0.5) { t1.won++; t1.points += 2; t2.lost++; }
-            else { t2.won++; t2.points += 2; t1.lost++; }
+            const rand = Math.random();
+            if (rand < 0.475) { t1.won++; t1.points += 2; t2.lost++; } // Slight bias for home/first team
+            else if (rand < 0.95) { t2.won++; t2.points += 2; t1.lost++; }
+            else { t1.no_result++; t2.no_result++; t1.points++; t2.points++; } // Simulate rare no result
         });
         // Sort by points, NRR, wins, then name
         simData.sort((a, b) => {
@@ -906,3 +908,77 @@ async function initializeApp() {
 
 // Start the application initialization when the DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);
+
+
+// --- Team Support Simulation ---
+const teamSelect = document.getElementById('teamSelect');
+const runSimBtn = document.getElementById('runSimBtn');
+const qualifySimBtn = document.getElementById('qualifySimBtn');
+const simResultDiv = document.getElementById('simResult');
+
+if (teamSelect && runSimBtn && simResultDiv && qualifySimBtn) {
+    runSimBtn.addEventListener('click', () => {
+        const selectedTeam = teamSelect.value;
+        if (!selectedTeam) {
+            simResultDiv.textContent = 'Please select a team.';
+            return;
+        }
+        runSimBtn.disabled = true;
+        simResultDiv.textContent = 'Running 10,000 simulations...';
+        setTimeout(() => {
+            const countFirst = simulateTeamFirstPercentage(selectedTeam, 10000);
+            simResultDiv.innerHTML = `${selectedTeam} chance: ${countFirst}%`;
+            runSimBtn.disabled = false;
+        }, 50);
+    });
+
+    qualifySimBtn.addEventListener('click', () => {
+        const selectedTeam = teamSelect.value;
+        if (!selectedTeam) {
+            simResultDiv.textContent = 'Please select a team.';
+            return;
+        }
+        qualifySimBtn.disabled = true;
+        const originalText = qualifySimBtn.innerHTML;
+        qualifySimBtn.innerHTML = 'Simulating...';
+        simResultDiv.textContent = 'Running 10,000 simulations...';
+        setTimeout(() => {
+            simulateQualification(10000); // Run the Monte Carlo for top 4
+            const teamObj = initialPointsData.find(t => t.team === selectedTeam);
+            let percent = teamObj && teamObj.qualProbability ? (teamObj.qualProbability * 100).toFixed(2) : '0.00';
+            qualifySimBtn.innerHTML = 'Playoffs Chances';
+            simResultDiv.innerHTML = `${selectedTeam} playoffs chance: ${percent}%`;
+            qualifySimBtn.disabled = false;
+        }, 50);
+    });
+    // Do not set initial text for qualifySimBtn, let HTML control the label.
+}
+
+function simulateTeamFirstPercentage(teamName, trials) {
+    let firstCount = 0;
+    for (let i = 0; i < trials; i++) {
+        // Deep copy initial state
+        const simData = JSON.parse(JSON.stringify(initialPointsData));
+        // Simulate each remaining match randomly
+        (remainingMatchesData || staticRemainingMatchesData).forEach(match => {
+            const [t1Name, t2Name] = match.teams.split(' vs ').map(s => s.trim());
+            const t1 = simData.find(t => t.team === t1Name);
+            const t2 = simData.find(t => t.team === t2Name);
+            if (!t1 || !t2) return;
+            t1.played++; t2.played++;
+            const rand = Math.random();
+            if (rand < 0.475) { t1.won++; t1.points += 2; t2.lost++; }
+            else if (rand < 0.95) { t2.won++; t2.points += 2; t1.lost++; }
+            else { t1.no_result++; t2.no_result++; t1.points++; t2.points++; }
+        });
+        // Sort by points, NRR, wins, then name
+        simData.sort((a, b) => {
+            if (b.points !== a.points) return b.points - a.points;
+            if (b.net_run_rate !== a.net_run_rate) return b.net_run_rate - a.net_run_rate;
+            if (b.won !== a.won) return b.won - a.won;
+            return a.team.localeCompare(b.team);
+        });
+        if (simData[0].team === teamName) firstCount++;
+    }
+    return ((firstCount / trials) * 100).toFixed(2);
+}
