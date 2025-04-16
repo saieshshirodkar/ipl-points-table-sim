@@ -172,9 +172,14 @@ h2 {
 
 /* Mobile table adjustments */
 @media (max-width: 600px) {
+  html, body {
+    overflow-x: hidden !important;
+  }
   .table-container {
     margin: 10px 0;
-    overflow-x: hidden; /* Prevent horizontal scroll on mobile */
+    width: 100%;
+    overflow-x: hidden !important;
+    box-sizing: border-box;
   }
   /* Matches container single column on mobile */
   .matches-container {

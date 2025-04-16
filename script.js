@@ -252,7 +252,7 @@ function estimateInitialStats(data) {
 }
 
 // Simulate qualification probabilities via Monte Carlo
-function simulateQualification(trials = 2000) {
+function simulateQualification(trials = 10000) {
     const counts = {};
     initialPointsData.forEach(team => counts[team.team] = 0);
     for (let i = 0; i < trials; i++) {
