@@ -1,106 +1,128 @@
 // Initial Data (Points Table Snapshot)
-const initialPointsData = [
-  {
-    rank: 1,
-    team: "Delhi Capitals",
-    played: 6,
-    won: 5,
-    lost: 1,
-    no_result: 0,
-    points: 10,
-    net_run_rate: 0.772
-  },
-  {
-    rank: 2,
-    team: "Gujarat Titans",
-    played: 6,
-    won: 4,
-    lost: 2,
-    no_result: 0,
-    points: 8,
-    net_run_rate: 1.081
-  },
-  {
-    rank: 3,
-    team: "Royal Challengers Bengaluru",
-    played: 6,
-    won: 4,
-    lost: 2,
-    no_result: 0,
-    points: 8,
-    net_run_rate: 0.672
-  },
-  {
-    rank: 4,
-    team: "Punjab Kings",
-    played: 6,
-    won: 4,
-    lost: 2,
-    no_result: 0,
-    points: 8,
-    net_run_rate: 0.172
-  },
-  {
-    rank: 5,
-    team: "Lucknow Super Giants",
-    played: 7,
-    won: 4,
-    lost: 3,
-    no_result: 0,
-    points: 8,
-    net_run_rate: 0.086
-  },
-  {
-    rank: 6,
-    team: "Kolkata Knight Riders",
-    played: 7,
-    won: 3,
-    lost: 4,
-    no_result: 0,
-    points: 6,
-    net_run_rate: 0.547
-  },
-  {
-    rank: 7,
-    team: "Mumbai Indians",
-    played: 6,
-    won: 2,
-    lost: 4,
-    no_result: 0,
-    points: 4,
-    net_run_rate: 0.104
-  },
-  {
-    rank: 8,
-    team: "Rajasthan Royals",
-    played: 7,
-    won: 2,
-    lost: 5,
-    no_result: 0,
-    points: 4,
-    net_run_rate: -0.738
-  },
-  {
-    rank: 9,
-    team: "Sunrisers Hyderabad",
-    played: 6,
-    won: 2,
-    lost: 4,
-    no_result: 0,
-    points: 4,
-    net_run_rate: -1.245
-  },
-  {
-    rank: 10,
-    team: "Chennai Super Kings",
-    played: 7,
-    won: 2,
-    lost: 5,
-    no_result: 0,
-    points: 4,
-    net_run_rate: -1.276
-  }
-];
+const rawPointsData = {
+  "points_table": [
+    {
+      "position": 1,
+      "team": "Delhi Capitals",
+      "matches_played": 6,
+      "wins": 5,
+      "losses": 1,
+      "ties": 0,
+      "no_results": 0,
+      "points": 10,
+      "net_run_rate": 0.744
+    },
+    {
+      "position": 2,
+      "team": "Punjab Kings",
+      "matches_played": 7,
+      "wins": 5,
+      "losses": 2,
+      "ties": 0,
+      "no_results": 0,
+      "points": 10,
+      "net_run_rate": 0.308
+    },
+    {
+      "position": 3,
+      "team": "Gujarat Titans",
+      "matches_played": 6,
+      "wins": 4,
+      "losses": 2,
+      "ties": 0,
+      "no_results": 0,
+      "points": 8,
+      "net_run_rate": 1.081
+    },
+    {
+      "position": 4,
+      "team": "Royal Challengers Bengaluru",
+      "matches_played": 7,
+      "wins": 4,
+      "losses": 3,
+      "ties": 0,
+      "no_results": 0,
+      "points": 8,
+      "net_run_rate": 0.446
+    },
+    {
+      "position": 5,
+      "team": "Lucknow Super Giants",
+      "matches_played": 7,
+      "wins": 4,
+      "losses": 3,
+      "ties": 0,
+      "no_results": 0,
+      "points": 8,
+      "net_run_rate": 0.086
+    },
+    {
+      "position": 6,
+      "team": "Kolkata Knight Riders",
+      "matches_played": 7,
+      "wins": 3,
+      "losses": 4,
+      "ties": 0,
+      "no_results": 0,
+      "points": 6,
+      "net_run_rate": 0.547
+    },
+    {
+      "position": 7,
+      "team": "Mumbai Indians",
+      "matches_played": 7,
+      "wins": 3,
+      "losses": 4,
+      "ties": 0,
+      "no_results": 0,
+      "points": 6,
+      "net_run_rate": 0.239
+    },
+    {
+      "position": 8,
+      "team": "Rajasthan Royals",
+      "matches_played": 7,
+      "wins": 2,
+      "losses": 5,
+      "ties": 0,
+      "no_results": 0,
+      "points": 4,
+      "net_run_rate": -0.714
+    },
+    {
+      "position": 9,
+      "team": "Sunrisers Hyderabad",
+      "matches_played": 7,
+      "wins": 2,
+      "losses": 5,
+      "ties": 0,
+      "no_results": 0,
+      "points": 4,
+      "net_run_rate": -1.217
+    },
+    {
+      "position": 10,
+      "team": "Chennai Super Kings",
+      "matches_played": 7,
+      "wins": 2,
+      "losses": 5,
+      "ties": 0,
+      "no_results": 0,
+      "points": 4,
+      "net_run_rate": -1.276
+    }
+  ]
+};
+const initialPointsData = rawPointsData.points_table.map(item => ({
+  position: item.position,
+  team: item.team,
+  played: item.matches_played,
+  won: item.wins,
+  lost: item.losses,
+  no_result: item.no_results,
+  points: item.points,
+  net_run_rate: item.net_run_rate
+}));
 
 // Static fallback data for remaining matches
 const staticRemainingMatchesData = [
@@ -153,6 +175,7 @@ const teamColorMap = {
 let matchSelections = {}; // Stores { match_number: { winner: "Team Name" | "NO_RESULT", scores: { team1: {r, oStr, oDec}, team2: {r, oStr, oDec} } } }
 let selectedFilterTeam = null; // Stores the full name of the team to filter by, or null
 let remainingMatchesData = []; // Will be loaded from JSON
+let hiddenMatchNumbers = []; // To store numbers from hidden_matches.json
 
 // --- Helper Functions ---
 
@@ -330,6 +353,21 @@ async function loadRemainingMatches() {
     }
 }
 
+async function loadHiddenMatches() {
+    try {
+        // Add a timestamp query parameter to prevent caching
+        const cacheBuster = '?t=' + Date.now();
+        const response = await fetch(encodeURI('hidden_matches.json' + cacheBuster));
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        hiddenMatchNumbers = await response.json();
+        console.log("Hidden matches loaded:", hiddenMatchNumbers); // Log loaded data
+    } catch (error) {
+        console.warn("Could not load hidden matches via fetch:", error);
+        hiddenMatchNumbers = []; // Default to empty if fetch fails
+    }
+}
 
 // --- Rendering Functions ---
 
@@ -354,7 +392,7 @@ function renderTable(data) {
       const shortTeamName = teamNameMap[team.team] || team.team;
       // Use the final calculated NRR, formatting to 3 decimals
       const displayNRR = typeof team.net_run_rate === 'number' ? team.net_run_rate.toFixed(3) : 'N/A';
-      row.insertCell().textContent = team.rank;
+      row.insertCell().textContent = team.position;
       row.insertCell().textContent = shortTeamName;
       row.insertCell().textContent = team.played;
       row.insertCell().textContent = team.won;
@@ -371,7 +409,15 @@ function renderTable(data) {
 function renderMatches() {
   matchesContainer.innerHTML = ''; // Clear existing matches
 
+  console.log('Rendering matches. Hidden numbers:', hiddenMatchNumbers); // Log before loop
+
   remainingMatchesData.forEach(match => {
+      // Log values being compared
+      console.log(`Checking match #${match.match_number} (type: ${typeof match.match_number}). Hidden includes? ${hiddenMatchNumbers.includes(match.match_number)}`);
+
+      // Use the fetched hiddenMatchNumbers array to check if the match should be skipped
+      if (hiddenMatchNumbers.includes(match.match_number)) return; 
+
       const teamsArray = match.teams.split(' vs ');
       const team1FullName = teamsArray[0].trim();
       const team2FullName = teamsArray[1].trim();
@@ -813,7 +859,7 @@ function updateTableFromSelections() {
 
   // --- Update ranks based on sorted order ---
   sortedData.forEach((team, index) => {
-      team.rank = index + 1;
+      team.position = index + 1;
   });
 
   // --- Render the updated table ---
@@ -888,6 +934,8 @@ async function initializeApp() {
     console.log("Loading remaining matches...");
     await loadRemainingMatches(); // Load match data from JSON
     console.log(`Remaining matches data length: ${remainingMatchesData.length}`);
+    await loadHiddenMatches(); // Load hidden matches data from JSON
+    console.log(`Hidden matches data length: ${hiddenMatchNumbers.length}`);
 
     // Only proceed with rendering if match data loaded successfully
     if (remainingMatchesData.length > 0) {
