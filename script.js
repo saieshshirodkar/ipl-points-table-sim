@@ -369,6 +369,113 @@ async function loadHiddenMatches() {
     }
 }
 
+// --- Monte Carlo Simulation for Win Probability ---
+
+// Global object to store simulation results
+window.matchWinProbs = undefined;
+
+function runMonteCarloSimulations() {
+    console.log("Running Monte Carlo simulations for match probabilities...");
+    matchWinProbs = {};
+    const simulations = 10000; // High number of simulations for statistical robustness
+
+    // Create a map of team metrics for quick lookup
+    const teamMetrics = {};
+    initialPointsData.forEach(team => {
+        teamMetrics[team.team] = {
+            points: team.points,
+            nrr: team.net_run_rate,
+            position: team.position,
+            winRatio: team.won / (team.played || 1), // Avoid division by zero
+        };
+    });
+
+    // Calculate team strength score - higher is better
+    const calculateTeamStrength = (teamName) => {
+        const metrics = teamMetrics[teamName];
+        if (!metrics) {
+            console.warn(`No metrics found for team: ${teamName}`);
+            return 1; // Default neutral strength
+        }
+
+        // Weights for different factors (can be adjusted)
+        const pointsWeight = 1.5;    // Points are most important
+        const nrrWeight = 1.0;       // NRR is important
+        const positionWeight = 0.7;  // Position has some influence
+        const winRatioWeight = 1.2;  // Win ratio is significant
+
+        // Points factor (higher is better)
+        const pointsFactor = metrics.points / 10; // Normalize to ~0-2 range typically
+
+        // NRR factor (transform to 0-2 range where higher NRR = higher value)
+        // Most NRRs are between -2 and +2
+        const nrrFactor = (metrics.nrr + 2) / 4; 
+
+        // Position factor (invert so lower position = higher value)
+        // 10 teams, so normalize to 0-1 range
+        const positionFactor = (11 - metrics.position) / 10;
+
+        // Win ratio factor (0-1 range)
+        const winRatioFactor = metrics.winRatio;
+
+        // Calculate weighted score
+        return (
+            pointsFactor * pointsWeight +
+            nrrFactor * nrrWeight +
+            positionFactor * positionWeight +
+            winRatioFactor * winRatioWeight
+        );
+    };
+
+    // Simulate each match
+    remainingMatchesData.forEach(match => {
+        const teamsArray = match.teams.split(' vs ');
+        const team1FullName = teamsArray[0].trim();
+        const team2FullName = teamsArray[1].trim();
+
+        // Get team strengths
+        const team1Strength = calculateTeamStrength(team1FullName);
+        const team2Strength = calculateTeamStrength(team2FullName);
+
+        // Calculate win probability based on relative team strengths
+        const totalStrength = team1Strength + team2Strength;
+        const team1WinProb = team1Strength / totalStrength;
+
+        let team1Wins = 0;
+        let team2Wins = 0;
+
+        // Run the simulations
+        for (let i = 0; i < simulations; i++) {
+            // Use the calculated probability instead of 50/50
+            if (Math.random() < team1WinProb) {
+                team1Wins++;
+            } else {
+                team2Wins++;
+            }
+        }
+
+        const totalSims = team1Wins + team2Wins;
+        console.log(`Match: ${team1FullName} vs ${team2FullName}`);
+        console.log(`  Strengths: ${team1FullName}=${team1Strength.toFixed(2)}, ${team2FullName}=${team2Strength.toFixed(2)}`);
+        console.log(`  Win probability: ${team1FullName}=${(team1WinProb*100).toFixed(1)}%, ${team2FullName}=${((1-team1WinProb)*100).toFixed(1)}%`);
+        console.log(`  Simulation results: ${team1FullName}=${team1Wins}, ${team2FullName}=${team2Wins}`);
+
+        matchWinProbs[match.match_number] = {
+            [team1FullName]: {
+                count: team1Wins,
+                prob: totalSims > 0 ? parseFloat(((team1Wins / totalSims) * 100).toFixed(1)) : 50
+            },
+            [team2FullName]: {
+                count: team2Wins,
+                prob: totalSims > 0 ? parseFloat(((team2Wins / totalSims) * 100).toFixed(1)) : 50
+            },
+            total: totalSims
+        };
+    });
+
+    console.log("Monte Carlo simulations complete:", matchWinProbs);
+}
+
 // --- Rendering Functions ---
 
 function renderTable(data) {
@@ -405,24 +512,34 @@ function renderTable(data) {
   });
 }
 
-
 function renderMatches() {
   matchesContainer.innerHTML = ''; // Clear existing matches
 
-  console.log('Rendering matches. Hidden numbers:', hiddenMatchNumbers); // Log before loop
+  // Ensure simulation results are available
+  if (!window.matchWinProbs) {
+    runMonteCarloSimulations();
+  }
 
   remainingMatchesData.forEach(match => {
-      // Log values being compared
-      console.log(`Checking match #${match.match_number} (type: ${typeof match.match_number}). Hidden includes? ${hiddenMatchNumbers.includes(match.match_number)}`);
-
-      // Use the fetched hiddenMatchNumbers array to check if the match should be skipped
-      if (hiddenMatchNumbers.includes(match.match_number)) return; 
+      if (hiddenMatchNumbers.includes(match.match_number)) return;
 
       const teamsArray = match.teams.split(' vs ');
       const team1FullName = teamsArray[0].trim();
       const team2FullName = teamsArray[1].trim();
       const team1ShortName = teamNameMap[team1FullName] || team1FullName;
       const team2ShortName = teamNameMap[team2FullName] || team2FullName;
+
+      // --- Monte Carlo Probabilities ---
+      const simResult = matchWinProbs && matchWinProbs[match.match_number];
+      const team1Prob = simResult ? simResult[team1FullName].prob : 50;
+      const team2Prob = simResult ? simResult[team2FullName].prob : 50;
+      const team1Count = simResult ? simResult[team1FullName].count : 0;
+      const team2Count = simResult ? simResult[team2FullName].count : 0;
+      const simTotal = simResult ? simResult.total : 0;
+      const team1ColorObj = teamColorMap[team1FullName] || { bg: '#808080', text: '#fff' };
+      const team2ColorObj = teamColorMap[team2FullName] || { bg: '#A9A9A9', text: '#fff' };
+      const team1Color = team1ColorObj.bg;
+      const team2Color = team2ColorObj.bg;
 
       const matchCard = document.createElement('div');
       matchCard.classList.add('match-card');
@@ -478,6 +595,26 @@ function renderMatches() {
       teamsDiv.appendChild(vsTextContainer);
       teamsDiv.appendChild(team2Button);
 
+      // --- Probability Bar ---
+      const probBarContainer = document.createElement('div');
+      probBarContainer.classList.add('probability-bar-container');
+      probBarContainer.title = `Win Probability: ${team1FullName} ${team1Prob}% (${team1Count}/${simTotal}) vs ${team2FullName} ${team2Prob}% (${team2Count}/${simTotal})`;
+
+      const probTeam1 = document.createElement('div');
+      probTeam1.classList.add('prob-segment', 'prob-team1');
+      probTeam1.style.width = `${team1Prob}%`;
+      probTeam1.style.backgroundColor = team1Color;
+      probTeam1.textContent = `${team1Prob}%`;
+
+      const probTeam2 = document.createElement('div');
+      probTeam2.classList.add('prob-segment', 'prob-team2');
+      probTeam2.style.width = `${team2Prob}%`;
+      probTeam2.style.backgroundColor = team2Color;
+      probTeam2.textContent = `${team2Prob}%`;
+
+      probBarContainer.appendChild(probTeam1);
+      probBarContainer.appendChild(probTeam2);
+
       // --- Score Inputs ---
       const scoreInputsDiv = document.createElement('div');
       scoreInputsDiv.classList.add('score-inputs');
@@ -514,6 +651,7 @@ function renderMatches() {
       matchCard.appendChild(teamsDiv);
       matchCard.appendChild(dropdownMenu);
       matchCard.appendChild(scoreInputsDiv);
+      matchCard.appendChild(probBarContainer);
       matchesContainer.appendChild(matchCard);
 
       // --- Restore State from matchSelections ---
@@ -566,7 +704,6 @@ function renderMatches() {
                updateTableFromSelections(); // Update table on score change
           });
       });
-
 
       // Result Selection (Team Wins or No Result)
       [team1Button, team2Button, noResultButton].forEach(button => {
@@ -830,7 +967,6 @@ function updateTableFromSelections() {
       }
   }); // End processing selections
 
-
   // --- Calculate final NRR for ALL teams ---
   updatedPointsData.forEach(team => {
       const runRateFor = (team.oversFacedDecimal > 0) ? (team.runsFor / team.oversFacedDecimal) : 0;
@@ -866,7 +1002,6 @@ function updateTableFromSelections() {
   renderTable(sortedData);
 }
 
-
 // --- Event Handlers ---
 
 function handleH1Click() {
@@ -894,7 +1029,6 @@ function handleResetClick() {
          matchesContainer.innerHTML = ''; // Clear container if no data
     }
 
-
     // Update table to reflect the reset (back to initial data)
     updateTableFromSelections();
 
@@ -904,7 +1038,6 @@ function handleResetClick() {
     // Close any potentially open dropdowns/score sections
     closeAllDropdowns();
 }
-
 
 // --- Initial Setup ---
 
@@ -956,7 +1089,6 @@ async function initializeApp() {
 
 // Start the application initialization when the DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);
-
 
 // --- Team Support Simulation ---
 const teamSelect = document.getElementById('teamSelect');
