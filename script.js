@@ -3,61 +3,72 @@ const rawPointsData = {
   "points_table": [
     {
       "position": 1,
-      "team": "Delhi Capitals",
-      "matches_played": 6,
+      "team": "Gujarat Titans",
+      "matches_played": 7,
       "wins": 5,
-      "losses": 1,
+      "losses": 2,
       "ties": 0,
       "no_results": 0,
       "points": 10,
-      "net_run_rate": 0.744
+      "net_run_rate": 0.984
     },
     {
       "position": 2,
-      "team": "Punjab Kings",
+      "team": "Delhi Capitals",
       "matches_played": 7,
       "wins": 5,
       "losses": 2,
       "ties": 0,
       "no_results": 0,
       "points": 10,
-      "net_run_rate": 0.308
+      "net_run_rate": 0.589
     },
     {
       "position": 3,
-      "team": "Gujarat Titans",
-      "matches_played": 6,
-      "wins": 4,
-      "losses": 2,
-      "ties": 0,
-      "no_results": 0,
-      "points": 8,
-      "net_run_rate": 1.081
-    },
-    {
-      "position": 4,
       "team": "Royal Challengers Bengaluru",
-      "matches_played": 7,
-      "wins": 4,
+      "matches_played": 8,
+      "wins": 5,
       "losses": 3,
       "ties": 0,
       "no_results": 0,
-      "points": 8,
-      "net_run_rate": 0.446
+      "points": 10,
+      "net_run_rate": 0.472
+    },
+    {
+      "position": 4,
+      "team": "Punjab Kings",
+      "matches_played": 8,
+      "wins": 5,
+      "losses": 3,
+      "ties": 0,
+      "no_results": 0,
+      "points": 10,
+      "net_run_rate": 0.177
     },
     {
       "position": 5,
       "team": "Lucknow Super Giants",
-      "matches_played": 7,
-      "wins": 4,
+      "matches_played": 8,
+      "wins": 5,
       "losses": 3,
       "ties": 0,
       "no_results": 0,
-      "points": 8,
-      "net_run_rate": 0.086
+      "points": 10,
+      "net_run_rate": 0.088
     },
     {
       "position": 6,
+      "team": "Mumbai Indians",
+      "matches_played": 8,
+      "wins": 4,
+      "losses": 4,
+      "ties": 0,
+      "no_results": 0,
+      "points": 8,
+      "net_run_rate": 0.483
+    },
+    {
+      "position": 7,
       "team": "Kolkata Knight Riders",
       "matches_played": 7,
       "wins": 3,
@@ -68,26 +79,15 @@ const rawPointsData = {
       "net_run_rate": 0.547
     },
     {
-      "position": 7,
-      "team": "Mumbai Indians",
-      "matches_played": 7,
-      "wins": 3,
-      "losses": 4,
-      "ties": 0,
-      "no_results": 0,
-      "points": 6,
-      "net_run_rate": 0.239
-    },
-    {
       "position": 8,
       "team": "Rajasthan Royals",
-      "matches_played": 7,
+      "matches_played": 8,
       "wins": 2,
-      "losses": 5,
+      "losses": 6,
       "ties": 0,
       "no_results": 0,
       "points": 4,
-      "net_run_rate": -0.714
+      "net_run_rate": -0.633
     },
     {
       "position": 9,
@@ -103,13 +103,13 @@ const rawPointsData = {
     {
       "position": 10,
       "team": "Chennai Super Kings",
-      "matches_played": 7,
+      "matches_played": 8,
       "wins": 2,
-      "losses": 5,
+      "losses": 6,
       "ties": 0,
       "no_results": 0,
       "points": 4,
-      "net_run_rate": -1.276
+      "net_run_rate": -1.392
     }
   ]
 };
