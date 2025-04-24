@@ -275,38 +275,107 @@ function estimateInitialStats(data) {
 }
 
 // Simulate qualification probabilities via Monte Carlo
-function simulateQualification(trials = 20000) {
+// Accepts the base data (usually initialPointsData) and the current manual selections
+// Respects manual selections and randomizes the rest
+// Returns an object mapping team names to qualification probabilities
+function simulateQualification(baseData, currentSelections, trials = 20000) {
+    // Ensure baseData is an array before proceeding
+    if (!Array.isArray(baseData)) {
+        console.error("Error in simulateQualification: baseData is not an array. Received:", baseData);
+        // Return empty probabilities object to avoid crashing further down
+        return {};
+    }
+
     const counts = {};
-    initialPointsData.forEach(team => counts[team.team] = 0);
+    baseData.forEach(team => counts[team.team] = 0);
+
+    // Filter remaining matches to only include those not yet played according to baseData
+    // This assumes baseData reflects the *start* state before any simulation/selections
+    const matchesToSimulate = remainingMatchesData.filter(match => {
+        // Basic check if match teams exist in baseData - more robust checks might be needed
+        const [t1Name, t2Name] = match.teams.split(' vs ').map(s => s.trim());
+        const t1Base = baseData.find(t => t.team === t1Name);
+        const t2Base = baseData.find(t => t.team === t2Name);
+        // Simple heuristic: if a match involves a team not in base data, maybe skip?
+        // Or, more accurately, check if the match date is after the base data's 'as of' date
+        return t1Base && t2Base; // Keep it simple for now
+    });
+
     for (let i = 0; i < trials; i++) {
-        // Deep copy initial state
-        const simData = JSON.parse(JSON.stringify(initialPointsData));
-        // Simulate each remaining match randomly with unbiased randomness
-        remainingMatchesData.forEach(match => {
+        // Deep copy initial state for this trial - Use the provided baseData
+        const simData = JSON.parse(JSON.stringify(baseData));
+
+        // Simulate each remaining match
+        matchesToSimulate.forEach(match => {
             const [t1Name, t2Name] = match.teams.split(' vs ').map(s => s.trim());
             const t1 = simData.find(t => t.team === t1Name);
             const t2 = simData.find(t => t.team === t2Name);
             if (!t1 || !t2) return;
-            t1.played++; t2.played++;
-            const rand = Math.random();
-            if (rand < 0.475) { t1.won++; t1.points += 2; t2.lost++; } // Slight bias for home/first team
-            else if (rand < 0.95) { t2.won++; t2.points += 2; t1.lost++; }
-            else { t1.no_result++; t2.no_result++; t1.points++; t2.points++; } // Simulate rare no result
+
+            const selection = currentSelections[match.match_number];
+            let winner = null;
+            let isNoResult = false;
+
+            // Check if this match has a manual selection
+            if (selection && selection.winner) {
+                if (selection.winner === 'NO_RESULT') {
+                    isNoResult = true;
+                } else {
+                    winner = selection.winner;
+                }
+            } else {
+                // No manual selection, randomize outcome
+                const rand = Math.random();
+                if (rand < 0.05) { // 5% chance of No Result
+                    isNoResult = true;
+                } else if (rand < 0.525) { // ~47.5% chance for team 1
+                    winner = t1Name;
+                } else { // ~47.5% chance for team 2
+                    winner = t2Name;
+                }
+            }
+
+            // Apply the result (selected or random)
+            if (t1.played < 14) {
+                t1.played++;
+            }
+            if (t2.played < 14) {
+                t2.played++;
+            }
+            if (isNoResult) {
+                t1.no_result++; t1.points++;
+                t2.no_result++; t2.points++;
+            } else if (winner === t1Name) {
+                t1.won++; t1.points += 2;
+                t2.lost++;
+            } else if (winner === t2Name) {
+                t2.won++; t2.points += 2;
+                t1.lost++;
+            }
+            // Note: NRR calculation is complex and not included in this simplified simulation
+            // Tie-breaking relies on points, then estimated NRR (from initial), then wins, then name
         });
-        // Sort by points, NRR, wins, then name
+
+        // Sort by points, NRR (initial estimate), wins, then name
         simData.sort((a, b) => {
             if (b.points !== a.points) return b.points - a.points;
+            // Use the initial NRR as a tie-breaker; simulating NRR changes is too complex here
             if (b.net_run_rate !== a.net_run_rate) return b.net_run_rate - a.net_run_rate;
             if (b.won !== a.won) return b.won - a.won;
             return a.team.localeCompare(b.team);
         });
+
         // Count top 4
         simData.slice(0, 4).forEach(t => counts[t.team]++);
     }
-    // Assign probabilities back to initialPointsData
-    initialPointsData.forEach(team => {
-        team.qualProbability = counts[team.team] / trials;
+
+    // Calculate probabilities
+    const probabilities = {};
+    baseData.forEach(team => {
+        probabilities[team.team] = counts[team.team] / trials;
     });
+
+    return probabilities;
 }
 
 // --- Local Storage ---
@@ -912,8 +981,12 @@ function updateTableFromSelections() {
       if (!team1Data || !team2Data) return; // Should not happen with valid data
 
       // --- Update Played, Points, Win/Loss/NR ---
-      team1Data.played += 1;
-      team2Data.played += 1;
+      if (team1Data.played < 14) {
+          team1Data.played += 1;
+      }
+      if (team2Data.played < 14) {
+          team2Data.played += 1;
+      }
 
       if (selection.winner === 'NO_RESULT') {
           team1Data.no_result += 1;
@@ -974,13 +1047,24 @@ function updateTableFromSelections() {
 
       team.net_run_rate = parseFloat((runRateFor - runRateAgainst).toFixed(3)); // Round final NRR
 
-      if (isNaN(team.net_run_rate)) { // Handle potential NaN if all inputs were zero
-          team.net_run_rate = 0;
+      if (isNaN(team.net_run_rate)) {
+          team.net_run_rate = 0; // Default to 0 if calculation results in NaN
       }
   });
 
-  // --- Sort the data ---
-  const sortedData = updatedPointsData.sort((a, b) => {
+  // --- Simulate Qualification Probabilities based on current selections ---
+  // Use fewer trials for responsiveness during interactive updates
+  console.time('Qualification Simulation (Update)');
+  const qualProbs = simulateQualification(initialPointsData, matchSelections, 5000);
+  console.timeEnd('Qualification Simulation (Update)');
+
+  // --- Merge calculated probabilities into the table data ---
+  updatedPointsData.forEach(team => {
+      team.qualProbability = qualProbs[team.team] || 0; // Assign calculated prob or default to 0
+  });
+
+  // --- Sort the table data ---
+  updatedPointsData.sort((a, b) => {
       // Primary sort: Points (descending)
       if (b.points !== a.points) return b.points - a.points;
       // Secondary sort: Net Run Rate (descending)
@@ -994,12 +1078,12 @@ function updateTableFromSelections() {
   });
 
   // --- Update ranks based on sorted order ---
-  sortedData.forEach((team, index) => {
+  updatedPointsData.forEach((team, index) => {
       team.position = index + 1;
   });
 
   // --- Render the updated table ---
-  renderTable(sortedData);
+  renderTable(updatedPointsData);
 }
 
 // --- Event Handlers ---
@@ -1039,6 +1123,106 @@ function handleResetClick() {
     closeAllDropdowns();
 }
 
+function handleRandomizeClick() {
+    if (!Array.isArray(remainingMatchesData)) return;
+    remainingMatchesData.forEach(match => {
+        const matchNumber = match.match_number;
+        const [t1Name, t2Name] = match.teams.split(' vs ').map(s => s.trim());
+
+        // Generate random result (winner and scores)
+        const result = generateRandomMatchResult(t1Name, t2Name);
+
+        // Store the full result
+        matchSelections[matchNumber] = { winner: result.winner, scores: result.scores };
+
+        // Ensure scores object and nested team objects exist, even for NO_RESULT
+        if (!matchSelections[matchNumber].scores) {
+            matchSelections[matchNumber].scores = { team1: {}, team2: {} };
+        } else {
+             if (!matchSelections[matchNumber].scores.team1) matchSelections[matchNumber].scores.team1 = {};
+             if (!matchSelections[matchNumber].scores.team2) matchSelections[matchNumber].scores.team2 = {};
+        }
+
+        // If No Result, explicitly clear/nullify score values in selection (though generateRandomMatchResult handles this)
+        if (result.winner === 'NO_RESULT') {
+            matchSelections[matchNumber].scores = { team1: {}, team2: {} };
+        }
+    });
+    saveSelections();
+    renderMatches(); // Re-render to show new selections and scores
+    updateTableFromSelections(); // Re-calculate table with new random scores/NRR
+    applyMatchFilter();
+}
+
+// --- Helper Function to convert decimal overs to string format ---
+function decimalOversToString(decimalOvers) {
+    if (decimalOvers === null || isNaN(decimalOvers)) return '';
+    const fullOvers = Math.floor(decimalOvers);
+    const balls = Math.round((decimalOvers - fullOvers) * 6);
+    if (balls === 0 || balls === 6) { // Handle full overs or rounding edge cases
+        return `${fullOvers + (balls === 6 ? 1 : 0)}`;
+    }
+    return `${fullOvers}.${balls}`;
+}
+
+// --- Helper Function to generate a random match result including scores ---
+function generateRandomMatchResult(team1Name, team2Name) {
+    const NO_RESULT_CHANCE = 0.03; // 3% chance of no result
+    if (Math.random() < NO_RESULT_CHANCE) {
+        return { winner: 'NO_RESULT', scores: { team1: {}, team2: {} } };
+    }
+
+    // Simulate Team 1 (Batting First)
+    const t1Runs = Math.floor(Math.random() * (230 - 130 + 1)) + 130; // Score between 130-230
+    const t1OversDecimal = 20.0;
+    const t1OversString = decimalOversToString(t1OversDecimal);
+
+    // Simulate Team 2 (Chasing)
+    const target = t1Runs + 1;
+    let t2Runs, t2OversDecimal;
+    const CHASE_SUCCESS_CHANCE = 0.5;
+
+    if (Math.random() < CHASE_SUCCESS_CHANCE) {
+        // Chase Success
+        t2Runs = target + Math.floor(Math.random() * 6); // Win by 1-6 runs effectively
+        // Simulate overs taken: less likely to be full 20
+        const oversRand = Math.random();
+        if (oversRand < 0.6) { // 60% chance: 17.0 - 19.5 overs
+            t2OversDecimal = Math.floor(Math.random() * (19 - 17 + 1) + 17) + (Math.floor(Math.random() * 6) / 6);
+        } else { // 40% chance: 20 overs (or close like 19.x)
+            t2OversDecimal = 19 + (Math.floor(Math.random() * 6) / 6); // 19.0 to 19.5
+            if (t2OversDecimal < 19) t2OversDecimal = 19.0; // Ensure at least 19
+            if (Math.random() < 0.5) t2OversDecimal = 20.0; // Make 20.0 common
+        }
+         t2OversDecimal = Math.min(20.0, Math.max(17.0, parseFloat(t2OversDecimal.toFixed(1)))); // Clamp & format
+
+    } else {
+        // Chase Failure
+        t2Runs = Math.floor(Math.random() * (target - 1 - Math.max(80, target - 80) + 1)) + Math.max(80, target - 80);
+        t2Runs = Math.max(0, t2Runs); // Ensure non-negative
+        // Simulate overs: often 20, sometimes bowled out earlier
+        const oversRand = Math.random();
+         if (oversRand < 0.7) { // 70% chance: 20 overs
+             t2OversDecimal = 20.0;
+         } else { // 30% chance: 18.0 - 19.5 overs
+             t2OversDecimal = Math.floor(Math.random() * (19 - 18 + 1) + 18) + (Math.floor(Math.random() * 6) / 6);
+             t2OversDecimal = Math.min(19.5, Math.max(18.0, parseFloat(t2OversDecimal.toFixed(1)))); // Clamp & format
+         }
+    }
+
+    const t2OversString = decimalOversToString(t2OversDecimal);
+
+    const winner = (t2Runs > t1Runs) ? team2Name : team1Name;
+
+    return {
+        winner,
+        scores: {
+            team1: { r: t1Runs, oStr: t1OversString, oDec: t1OversDecimal },
+            team2: { r: t2Runs, oStr: t2OversString, oDec: t2OversDecimal }
+        }
+    };
+}
+
 // --- Initial Setup ---
 
 // Wrap initialization in an async function to handle await for fetch
@@ -1061,6 +1245,8 @@ async function initializeApp() {
     mainHeading.addEventListener('click', handleH1Click);
     document.body.addEventListener('click', handleBodyClick);
     resetButton.addEventListener('click', handleResetClick);
+    const randomizeBtn = document.getElementById('randomizeBtn');
+    if (randomizeBtn) randomizeBtn.addEventListener('click', handleRandomizeClick);
 
     // Load data and render
     loadSelections(); // Load selections from localStorage first
@@ -1121,15 +1307,35 @@ if (teamSelect && runSimBtn && simResultDiv && qualifySimBtn) {
         qualifySimBtn.disabled = true;
         const originalText = qualifySimBtn.innerHTML;
         qualifySimBtn.innerHTML = 'Simulating...';
-        simResultDiv.textContent = 'Running 10,000 simulations...';
+        simResultDiv.textContent = 'Running 20,000 simulations...';
+
         setTimeout(() => {
-            simulateQualification(10000); // Run the Monte Carlo for top 4
+            console.time('Qualification Simulation (Button)');
+            // Run the Monte Carlo using the *new* function, respecting selections
+            const qualProbs = simulateQualification(initialPointsData, matchSelections, 20000);
+            console.timeEnd('Qualification Simulation (Button)');
+
+            // Update the main table data with the new probabilities
+            initialPointsData.forEach(team => {
+                team.qualProbability = qualProbs[team.team] || 0;
+            });
+            // Also update the currently displayed table data immediately
+            let currentTableData = JSON.parse(JSON.stringify(initialPointsData)); // Need a way to get current calculated state
+            // *** This is tricky: We need to re-run the *deterministic* part of updateTableFromSelections
+            //     to get the correct points/NRR *before* merging the new probabilities.
+            // Let's just re-call updateTableFromSelections which will re-run the *fast* simulation anyway.
+            // This isn't ideal as it runs the 5000 simulation again, but simplifies logic.
+            // A better approach would be to have a function that just does the deterministic update.
+
+            updateTableFromSelections(); // Re-run the whole update process
+
+            // Update the specific team result display
             const teamObj = initialPointsData.find(t => t.team === selectedTeam);
             let percent = teamObj && teamObj.qualProbability ? (teamObj.qualProbability * 100).toFixed(2) : '0.00';
-            qualifySimBtn.innerHTML = 'Playoffs Chances';
+            qualifySimBtn.innerHTML = 'Playoffs Chances'; // Restore button text
             simResultDiv.innerHTML = `${selectedTeam} playoffs chance: ${percent}%`;
             qualifySimBtn.disabled = false;
-        }, 50);
+        }, 50); // setTimeout allows UI to update
     });
     // Do not set initial text for qualifySimBtn, let HTML control the label.
 }
@@ -1145,11 +1351,23 @@ function simulateTeamFirstPercentage(teamName, trials) {
             const t1 = simData.find(t => t.team === t1Name);
             const t2 = simData.find(t => t.team === t2Name);
             if (!t1 || !t2) return;
-            t1.played++; t2.played++;
+            if (t1.played < 14) {
+                t1.played++;
+            }
+            if (t2.played < 14) {
+                t2.played++;
+            }
             const rand = Math.random();
-            if (rand < 0.475) { t1.won++; t1.points += 2; t2.lost++; }
-            else if (rand < 0.95) { t2.won++; t2.points += 2; t1.lost++; }
-            else { t1.no_result++; t2.no_result++; t1.points++; t2.points++; }
+            if (rand < 0.05) { // 5% chance of No Result
+                t1.no_result++; t1.points++;
+                t2.no_result++; t2.points++;
+            } else if (rand < 0.525) { // ~47.5% chance for team 1
+                t1.won++; t1.points += 2;
+                t2.lost++;
+            } else { // ~47.5% chance for team 2
+                t2.won++; t2.points += 2;
+                t1.lost++;
+            }
         });
         // Sort by points, NRR, wins, then name
         simData.sort((a, b) => {
