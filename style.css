@@ -1031,7 +1031,7 @@ tr.selected-row {
     align-items: center;
     gap: 6px;
     transition: background-color 0.2s ease, transform 0.1s ease;
-    -webkit-appearance: none; /* Remove default iOS styling */
+    appearance: none; /* Remove default iOS styling */
     -webkit-tap-highlight-color: transparent; /* Remove tap highlight on iOS/Android */
     outline: none; /* Remove default focus outline */
 }
