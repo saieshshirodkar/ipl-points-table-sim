@@ -107,6 +107,8 @@ h2 {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
   border-radius: 8px;
   overflow: hidden;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 #pointsTable th {
@@ -156,6 +158,59 @@ h2 {
 #pointsTable tbody tr:hover {
   transform: translateY(-2px);
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Special styling for top 4 teams */
+tr[data-playoff="true"] td {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+/* Create a subtle divider after position 4 */
+tr:nth-child(4) td {
+  border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Add hover effect to rows */
+#pointsTable tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  transform: translateX(2px);
+}
+
+/* Make qualification percentage more prominent for top teams */
+tr[data-playoff="true"] td:last-child {
+  color: #4db65b;
+  font-weight: 600;
+}
+
+/* Style the points column to stand out more */
+#pointsTable td:nth-child(7) {
+  font-weight: 500;
+  color: #f5f5f5;
+}
+
+/* Improve NRR column visibility */
+#pointsTable td:nth-child(8) {
+  font-family: monospace;
+  letter-spacing: 0.5px;
+  position: relative;
+}
+
+#pointsTable td:nth-child(8):not(:empty) {
+  font-weight: 500;
+}
+
+#pointsTable td:nth-child(8):not(:empty):before {
+  content: attr(data-value);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  color: #4db65b;
+}
+
+#pointsTable td:nth-child(8):not(:empty)[data-value^="-"]:before {
+  color: #ff6b6b;
 }
 
 /* Ensures the container scroll bar looks neat */
@@ -260,13 +315,15 @@ h2 {
     border: 1px solid #555555;
     border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease-out;
+    transition: none;
     flex-basis: 40%; /* Give buttons a base width */
     flex-grow: 0; /* Don't let them grow excessively */
     margin: 0 0px; /* Remove side margin, handled by justify-content */
     text-align: center;
     font-size: 0.95em; /* Slightly larger font */
     font-weight: 500; /* Medium weight */
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+    touch-action: manipulation; /* Prevent delay from double-tap to zoom */
 }
 
 .team-button:hover {
@@ -275,12 +332,9 @@ h2 {
 }
 
 .team-button:active {
-    transform: scale(0.98); /* Slight press effect */
-}
-
-/* Style for the selected team button */
-.team-button.selected {
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.1); /* Subtle glow */
+    transform: scale(0.95); /* More noticeable press effect */
+    background-color: #555555; /* Darker background when pressed */
+    border-color: #888888; /* Lighter border when pressed */
 }
 
 /* No Result button styling */
@@ -490,8 +544,11 @@ footer a:hover {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: color 0.2s ease, background-color 0.2s ease;
+    transition: none;
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation; /* Prevent delay from double-tap to zoom */
+    min-width: 30px; /* Ensure minimum touch target size */
+    min-height: 30px; /* Ensure minimum touch target size */
 }
 
 .icon-button:focus, .icon-button:focus-visible {
@@ -506,6 +563,12 @@ footer a:hover {
 .icon-button:hover {
     color: #ffffff;
     background-color: rgba(255, 255, 255, 0.1);
+}
+
+.icon-button:active {
+    transform: scale(0.9);
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Last Updated Text */
@@ -929,4 +992,85 @@ tr.selected-row {
     .sim-result {
         font-size: 0.9em; /* Smaller result text on mobile */
     }
+
+    /* Adjust section header for mobile */
+    .section-header {
+        flex-direction: column; /* Stack heading and buttons vertically */
+        align-items: center; /* Center items horizontally */
+        gap: 10px; /* Add space between heading and buttons */
+        text-align: center; /* Center text content like h2 */
+        padding: 0 5px; /* Adjust padding */
+    }
+
+    .section-header h2 {
+        margin-bottom: 5px; /* Add some space below the heading */
+        font-size: 1.3em; /* Slightly smaller heading on mobile */
+        position: static; /* Reset absolute positioning */
+        transform: none; /* Remove centering transform */
+        left: auto; /* Reset left offset */
+    }
+
+    .buttons-container {
+        order: -1; /* Place buttons above the heading */
+        align-self: flex-end; /* Align buttons to the right */
+    }
+}
+
+.icon-button,
+#randomizeBtn,
+#resetSimulationBtn {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #f0f0f0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    -webkit-appearance: none; /* Remove default iOS styling */
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on iOS/Android */
+    outline: none; /* Remove default focus outline */
+}
+
+.icon-button svg {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+}
+
+/* Button hover/active states */
+.icon-button:hover,
+#randomizeBtn:hover,
+#resetSimulationBtn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.icon-button:active,
+#randomizeBtn:active,
+#resetSimulationBtn:active {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: scale(0.98);
+}
+
+.icon-button:focus,
+#randomizeBtn:focus,
+#resetSimulationBtn:focus {
+    background-color: rgba(255, 255, 255, 0.1); /* Maintain original background on focus */
+    box-shadow: none; /* Remove any default focus shadow if present */
+}
+
+/* Matches Section */
+#matchesContainer {
+    display: grid;
+    gap: 20px;
+    padding: 20px;
+    max-width: 1000px;
+    margin: 8px auto 0; /* Keep existing margin */
+    /* Add padding-top to account for sticky header height */
+    /* Estimate table header height + top offset ~ 50-70px? Add some buffer */
+    padding-top: 80px; /* Increased padding-top */
 }

@@ -1,5 +1,6 @@
 // Initial Data (Points Table Snapshot)
 const rawPointsData = {
+  "updated": "2025-04-25",
   "points_table": [
     {
       "position": 1,
@@ -25,6 +26,17 @@ const rawPointsData = {
     },
     {
       "position": 3,
+      "team": "Royal Challengers Bengaluru",
+      "matches_played": 9,
+      "wins": 6,
+      "losses": 3,
+      "ties": 0,
+      "no_results": 0,
+      "points": 12,
+      "net_run_rate": 0.482
+    },
+    {
+      "position": 4,
       "team": "Mumbai Indians",
       "matches_played": 9,
       "wins": 5,
@@ -33,17 +45,6 @@ const rawPointsData = {
       "no_results": 0,
       "points": 10,
       "net_run_rate": 0.673
-    },
-    {
-      "position": 4,
-      "team": "Royal Challengers Bengaluru",
-      "matches_played": 8,
-      "wins": 5,
-      "losses": 3,
-      "ties": 0,
-      "no_results": 0,
-      "points": 10,
-      "net_run_rate": 0.472
     },
     {
       "position": 5,
@@ -80,32 +81,32 @@ const rawPointsData = {
     },
     {
       "position": 8,
-      "team": "Rajasthan Royals",
-      "matches_played": 8,
-      "wins": 2,
+      "team": "Sunrisers Hyderabad",
+      "matches_played": 9,
+      "wins": 3,
       "losses": 6,
       "ties": 0,
       "no_results": 0,
-      "points": 4,
-      "net_run_rate": -0.633
+      "points": 6,
+      "net_run_rate": -1.103
     },
     {
       "position": 9,
-      "team": "Sunrisers Hyderabad",
-      "matches_played": 8,
+      "team": "Rajasthan Royals",
+      "matches_played": 9,
       "wins": 2,
-      "losses": 6,
+      "losses": 7,
       "ties": 0,
       "no_results": 0,
       "points": 4,
-      "net_run_rate": -1.217
+      "net_run_rate": -0.625
     },
     {
       "position": 10,
       "team": "Chennai Super Kings",
-      "matches_played": 8,
+      "matches_played": 9,
       "wins": 2,
-      "losses": 6,
+      "losses": 7,
       "ties": 0,
       "no_results": 0,
       "points": 4,
@@ -113,6 +114,7 @@ const rawPointsData = {
     }
   ]
 };
+
 const initialPointsData = rawPointsData.points_table.map(item => ({
   position: item.position,
   team: item.team,
@@ -431,6 +433,8 @@ async function loadHiddenMatches() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         hiddenMatchNumbers = await response.json();
+        // Convert any string values to numbers for reliable comparison
+        hiddenMatchNumbers = hiddenMatchNumbers.map(n => Number(n));
         console.log("Hidden matches loaded:", hiddenMatchNumbers); // Log loaded data
     } catch (error) {
         console.warn("Could not load hidden matches via fetch:", error);
@@ -556,18 +560,38 @@ function renderTable(data) {
 
       const colors = teamColorMap[team.team];
       if (colors) {
-          // Apply a lighter, transparent background for readability
-          row.style.backgroundColor = hexToRgba(colors.bg, 0.15);
+          // More vibrant team colors with gradient effect
+          const bgColor = hexToRgba(colors.bg, 0.25);
+          const bgColorLight = hexToRgba(colors.bg, 0.1);
+          row.style.background = `linear-gradient(to right, ${bgColor}, ${bgColorLight})`;
+          // Add subtle border on the left side
+          row.style.borderLeft = `4px solid ${colors.bg}`;
+          // Special styling for playoff spots (top 4)
+          if (team.position <= 4) {
+              row.style.borderLeft = `4px solid ${colors.bg}`;
+              // Add custom attribute for potential CSS styling
+              row.dataset.playoff = "true";
+              // Add subtle top/bottom borders for separation
+              row.style.borderTop = `1px solid ${hexToRgba(colors.bg, 0.3)}`;
+              row.style.borderBottom = `1px solid ${hexToRgba(colors.bg, 0.3)}`;
+              // Slightly bolder text for playoff teams
+              row.style.fontWeight = "500";
+          }
       }
 
       // Highlight the row if it's the currently selected filter team
       if (team.team === selectedFilterTeam) {
           row.classList.add('selected-row');
+          // Make the selected team more prominent
+          row.style.boxShadow = `0 0 8px ${hexToRgba(colors?.bg || '#333', 0.5)}`;
+          row.style.transform = "scale(1.01)";
+          row.style.zIndex = "1";
       }
 
       const shortTeamName = teamNameMap[team.team] || team.team;
-      // Use the final calculated NRR, formatting to 3 decimals
+      // Use the calculated NRR for display, with 3 decimal formatting 
       const displayNRR = typeof team.net_run_rate === 'number' ? team.net_run_rate.toFixed(3) : 'N/A';
+      
       row.insertCell().textContent = team.position;
       row.insertCell().textContent = shortTeamName;
       row.insertCell().textContent = team.played;
@@ -590,7 +614,7 @@ function renderMatches() {
   }
 
   remainingMatchesData.forEach(match => {
-      if (hiddenMatchNumbers.includes(match.match_number)) return;
+      if (hiddenMatchNumbers.includes(Number(match.match_number))) return;
 
       const teamsArray = match.teams.split(' vs ');
       const team1FullName = teamsArray[0].trim();
@@ -778,13 +802,11 @@ function renderMatches() {
       [team1Button, team2Button, noResultButton].forEach(button => {
           button.addEventListener('click', (event) => {
               event.stopPropagation(); // Prevent closing dropdown immediately if it was open
+              // Provide immediate visual feedback before processing
+              button.style.backgroundColor = "#555";
               const currentMatchNumber = match.match_number;
               const resultType = button.dataset.resultType;
               const selectedTeamName = resultType === 'WIN' ? button.dataset.teamName : 'NO_RESULT';
-
-              // Get related elements
-              const currentScoreInputsDiv = scoreInputsDiv; // Already have reference
-              const allInputs = currentScoreInputsDiv.querySelectorAll('input');
 
               // Logic: If clicking the currently selected option, deselect. Otherwise, select the new one.
               const isCurrentlySelected = matchSelections[currentMatchNumber]?.winner === selectedTeamName;
@@ -795,8 +817,8 @@ function renderMatches() {
                   btn.classList.remove('selected');
                   resetButtonColors(btn);
               });
-              currentScoreInputsDiv.classList.remove('disabled');
-              allInputs.forEach(input => input.disabled = false);
+              scoreInputsDiv.classList.remove('disabled');
+              scoreInputsDiv.querySelectorAll('input').forEach(input => input.disabled = false);
               // --- End Reset UI ---
 
               if (isCurrentlySelected) {
@@ -819,8 +841,8 @@ function renderMatches() {
 
                   if (selectedTeamName === 'NO_RESULT') {
                       matchCard.classList.add('no-result-selected');
-                      currentScoreInputsDiv.classList.add('disabled');
-                      allInputs.forEach(input => {
+                      scoreInputsDiv.classList.add('disabled');
+                      scoreInputsDiv.querySelectorAll('input').forEach(input => {
                           input.disabled = true;
                           // Clear inputs when selecting No Result (as per plan)
                           // input.value = ''; // Clear visually
@@ -838,14 +860,17 @@ function renderMatches() {
                       winnerButton.classList.add('selected');
                       applyTeamColorsToButton(winnerButton, teamColorMap[selectedTeamName]);
                       // Ensure inputs are enabled (already done in reset, but safe)
-                      currentScoreInputsDiv.classList.remove('disabled');
-                      allInputs.forEach(input => input.disabled = false);
+                      scoreInputsDiv.classList.remove('disabled');
+                      scoreInputsDiv.querySelectorAll('input').forEach(input => input.disabled = false);
                   }
               }
 
               closeAllDropdowns(); // Close dropdown after selection
-              saveSelections();
-              updateTableFromSelections();
+              // Defer heavy operations with setTimeout(0)
+              setTimeout(() => {
+                  saveSelections();
+                  updateTableFromSelections();
+              }, 0);
           });
       });
 
@@ -876,6 +901,13 @@ function renderMatches() {
       });
 
   }); // End forEach match
+
+  // Fallback: ensure any hidden matches are removed
+  hiddenMatchNumbers.forEach(num => {
+      const selector = `.match-card[data-match-number="${num}"]`;
+      const card = matchesContainer.querySelector(selector);
+      if (card) card.remove();
+  });
 }
 
 // --- Filtering Logic ---
@@ -1052,17 +1084,6 @@ function updateTableFromSelections() {
       }
   });
 
-  // --- Simulate Qualification Probabilities based on current selections ---
-  // Use fewer trials for responsiveness during interactive updates
-  console.time('Qualification Simulation (Update)');
-  const qualProbs = simulateQualification(initialPointsData, matchSelections, 5000);
-  console.timeEnd('Qualification Simulation (Update)');
-
-  // --- Merge calculated probabilities into the table data ---
-  updatedPointsData.forEach(team => {
-      team.qualProbability = qualProbs[team.team] || 0; // Assign calculated prob or default to 0
-  });
-
   // --- Sort the table data ---
   updatedPointsData.sort((a, b) => {
       // Primary sort: Points (descending)
@@ -1081,6 +1102,26 @@ function updateTableFromSelections() {
   updatedPointsData.forEach((team, index) => {
       team.position = index + 1;
   });
+
+  // --- Calculate qualification probabilities ---
+  // Check if all teams have played all 14 matches
+  const allMatchesComplete = updatedPointsData.every(team => team.played >= 14);
+  
+  if (allMatchesComplete) {
+    // If all matches are complete, top 4 have 100% qualification, others 0%
+    updatedPointsData.forEach(team => {
+      // Top 4 teams have 100% qualification, others have null (will display as -)
+      team.qualProbability = team.position <= 4 ? 1.0 : null;
+    });
+  } else {
+    // Not all matches complete, run simulations
+    const qualProbs = simulateQualification(initialPointsData, matchSelections, 5000);
+    
+    // Add qualification probability to each team
+    updatedPointsData.forEach(team => {
+      team.qualProbability = qualProbs[team.team] || 0;
+    });
+  }
 
   // --- Render the updated table ---
   renderTable(updatedPointsData);
@@ -1101,57 +1142,224 @@ function handleBodyClick(event) {
 
 function handleResetClick() {
     // Clear state
+    // Provide immediate visual feedback
+    resetButton.style.backgroundColor = "rgba(255, 255, 255, 0.2)";
+    setTimeout(() => resetButton.style.backgroundColor = "", 100);
+    
     matchSelections = {};
     selectedFilterTeam = null; // Reset filter state
     localStorage.removeItem(LOCAL_STORAGE_KEY);
 
-    // Re-render matches to clear UI states (selections, inputs)
-    // Ensure match data is available before re-rendering
+    // Render first for immediate feedback
     if (remainingMatchesData.length > 0) {
-        renderMatches();
+      renderMatches();
     } else {
-         matchesContainer.innerHTML = ''; // Clear container if no data
+      matchesContainer.innerHTML = '';
     }
-
-    // Update table to reflect the reset (back to initial data)
-    updateTableFromSelections();
-
-    // Apply filter (which will now be null, clearing filter UI)
-    applyMatchFilter();
-
-    // Close any potentially open dropdowns/score sections
-    closeAllDropdowns();
+    
+    // Handle storage and updates in the background
+    setTimeout(() => {
+      updateTableFromSelections();
+      applyMatchFilter();
+      closeAllDropdowns();
+    }, 0);
 }
 
 function handleRandomizeClick() {
+    // Provide immediate visual feedback
+    const randomizeBtn = document.getElementById('randomizeBtn');
+    if (randomizeBtn) {
+      randomizeBtn.style.backgroundColor = "rgba(255, 255, 255, 0.2)";
+      setTimeout(() => randomizeBtn.style.backgroundColor = "", 100);
+    }
+    
     if (!Array.isArray(remainingMatchesData)) return;
-    remainingMatchesData.forEach(match => {
-        const matchNumber = match.match_number;
-        const [t1Name, t2Name] = match.teams.split(' vs ').map(s => s.trim());
-
-        // Generate random result (winner and scores)
-        const result = generateRandomMatchResult(t1Name, t2Name);
-
-        // Store the full result
-        matchSelections[matchNumber] = { winner: result.winner, scores: result.scores };
-
-        // Ensure scores object and nested team objects exist, even for NO_RESULT
-        if (!matchSelections[matchNumber].scores) {
-            matchSelections[matchNumber].scores = { team1: {}, team2: {} };
+    
+    // Check if a user has selected a favorite team
+    const teamSelect = document.getElementById('teamSelect');
+    const favoriteTeam = teamSelect ? teamSelect.value : null;
+    const simResultDiv = document.getElementById('simResult');
+    
+    // Clear matchSelections first for immediate UI reset
+    matchSelections = {};
+    renderMatches();
+    
+    // Generate random results in the background
+    setTimeout(() => {
+      if (favoriteTeam) {
+        // Create a copy of initial data to work with
+        const tempData = JSON.parse(JSON.stringify(initialPointsData));
+        
+        remainingMatchesData.forEach(match => {
+          if (hiddenMatchNumbers.includes(Number(match.match_number))) return;
+          
+          const matchNumber = match.match_number;
+          const [t1Name, t2Name] = match.teams.split(' vs ').map(s => s.trim());
+          
+          // If match involves favorite team, make them win
+          if (t1Name === favoriteTeam || t2Name === favoriteTeam) {
+            // Team selection (favorite team wins)
+            const winner = (t1Name === favoriteTeam) ? t1Name : t2Name;
+            
+            // Generate results with favorable outcome
+            let result;
+            if (t1Name === favoriteTeam) {
+              result = {
+                winner: t1Name,
+                scores: {
+                  team1: { r: 180, oStr: "20", oDec: 20 },
+                  team2: { r: 160, oStr: "20", oDec: 20 }
+                }
+              };
+            } else {
+              result = {
+                winner: t2Name,
+                scores: {
+                  team1: { r: 160, oStr: "20", oDec: 20 },
+                  team2: { r: 180, oStr: "20", oDec: 20 }
+                }
+              };
+            }
+            
+            matchSelections[matchNumber] = { 
+              winner: result.winner, 
+              scores: result.scores 
+            };
+            
+            // Update temp data to track standings
+            const team1 = tempData.find(t => t.team === t1Name);
+            const team2 = tempData.find(t => t.team === t2Name);
+            
+            if (team1 && team2) {
+              team1.played++;
+              team2.played++;
+              
+              if (result.winner === t1Name) {
+                team1.won++;
+                team2.lost++;
+                team1.points += 2;
+              } else {
+                team2.won++;
+                team1.lost++;
+                team2.points += 2;
+              }
+            }
+          } else {
+            // For matches not involving favorite team
+            // Check if either team is ahead of favorite team
+            const favoriteTeamData = tempData.find(t => t.team === favoriteTeam);
+            const team1Data = tempData.find(t => t.team === t1Name);
+            const team2Data = tempData.find(t => t.team === t2Name);
+            
+            if (favoriteTeamData && team1Data && team2Data) {
+              // If both teams have more points than favorite team, make one lose
+              if (team1Data.points > favoriteTeamData.points && 
+                  team2Data.points > favoriteTeamData.points) {
+                // Choose the team with more points to lose
+                const winner = team1Data.points > team2Data.points ? t2Name : t1Name;
+                
+                const result = {
+                  winner: winner,
+                  scores: winner === t1Name ? 
+                    { team1: { r: 180, oStr: "20", oDec: 20 }, team2: { r: 160, oStr: "20", oDec: 20 } } :
+                    { team1: { r: 160, oStr: "20", oDec: 20 }, team2: { r: 180, oStr: "20", oDec: 20 } }
+                };
+                
+                matchSelections[matchNumber] = { 
+                  winner: result.winner, 
+                  scores: result.scores 
+                };
+                
+                // Update data
+                team1Data.played++;
+                team2Data.played++;
+                
+                if (result.winner === t1Name) {
+                  team1Data.won++;
+                  team2Data.lost++;
+                  team1Data.points += 2;
+                } else {
+                  team2Data.won++;
+                  team1Data.lost++;
+                  team2Data.points += 2;
+                }
+              } else {
+                // Normal randomization for other matches
+                const result = generateRandomMatchResult(t1Name, t2Name);
+                matchSelections[matchNumber] = { 
+                  winner: result.winner, 
+                  scores: result.scores 
+                };
+                
+                // Update data
+                team1Data.played++;
+                team2Data.played++;
+                
+                if (result.winner === t1Name) {
+                  team1Data.won++;
+                  team2Data.lost++;
+                  team1Data.points += 2;
+                } else if (result.winner === t2Name) {
+                  team2Data.won++;
+                  team1Data.lost++;
+                  team2Data.points += 2;
+                } else if (result.winner === 'NO_RESULT') {
+                  team1Data.no_result++;
+                  team2Data.no_result++;
+                  team1Data.points++;
+                  team2Data.points++;
+                }
+              }
+            } else {
+              // Fallback to normal randomization
+              const result = generateRandomMatchResult(t1Name, t2Name);
+              matchSelections[matchNumber] = { 
+                winner: result.winner, 
+                scores: result.scores 
+              };
+            }
+          }
+        });
+        
+        // Check if the favorite team is in top 4
+        tempData.sort((a, b) => {
+          if (b.points !== a.points) return b.points - a.points;
+          if (b.net_run_rate !== a.net_run_rate) return b.net_run_rate - a.net_run_rate;
+          return 0;
+        });
+        
+        const favoriteRank = tempData.findIndex(t => t.team === favoriteTeam) + 1;
+        
+        if (favoriteRank <= 4) {
+          if (simResultDiv) {
+            simResultDiv.innerHTML = `<span style="color: #4db6ac;">Successfully placed ${favoriteTeam} in the top 4 (position #${favoriteRank})!</span>`;
+          }
         } else {
-             if (!matchSelections[matchNumber].scores.team1) matchSelections[matchNumber].scores.team1 = {};
-             if (!matchSelections[matchNumber].scores.team2) matchSelections[matchNumber].scores.team2 = {};
+          if (simResultDiv) {
+            simResultDiv.innerHTML = `<span style="color: #ff6b6b;">Sorry, couldn't get ${favoriteTeam} into top 4. Best position: #${favoriteRank}</span>`;
+          }
         }
-
-        // If No Result, explicitly clear/nullify score values in selection (though generateRandomMatchResult handles this)
-        if (result.winner === 'NO_RESULT') {
-            matchSelections[matchNumber].scores = { team1: {}, team2: {} };
-        }
-    });
-    saveSelections();
-    renderMatches(); // Re-render to show new selections and scores
-    updateTableFromSelections(); // Re-calculate table with new random scores/NRR
-    applyMatchFilter();
+      } else {
+        // No favorite team, just randomize normally
+        remainingMatchesData.forEach(match => {
+          if (hiddenMatchNumbers.includes(Number(match.match_number))) return;
+          
+          const matchNumber = match.match_number;
+          const [t1Name, t2Name] = match.teams.split(' vs ').map(s => s.trim());
+          
+          const result = generateRandomMatchResult(t1Name, t2Name);
+          matchSelections[matchNumber] = { 
+            winner: result.winner, 
+            scores: result.scores 
+          };
+        });
+      }
+      
+      saveSelections();
+      renderMatches();
+      updateTableFromSelections();
+      applyMatchFilter();
+    }, 0);
 }
 
 // --- Helper Function to convert decimal overs to string format ---
@@ -1173,7 +1381,7 @@ function generateRandomMatchResult(team1Name, team2Name) {
     }
 
     // Simulate Team 1 (Batting First)
-    const t1Runs = Math.floor(Math.random() * (230 - 130 + 1)) + 130; // Score between 130-230
+    const t1Runs = Math.floor(Math.random() * (240 - 120 + 1)) + 120; // Score between 120-240
     const t1OversDecimal = 20.0;
     const t1OversString = decimalOversToString(t1OversDecimal);
 
@@ -1184,29 +1392,30 @@ function generateRandomMatchResult(team1Name, team2Name) {
 
     if (Math.random() < CHASE_SUCCESS_CHANCE) {
         // Chase Success
-        t2Runs = target + Math.floor(Math.random() * 6); // Win by 1-6 runs effectively
+        t2Runs = target + Math.floor(Math.random() * 20); // Win by 1-20 runs for more NRR impact
         // Simulate overs taken: less likely to be full 20
         const oversRand = Math.random();
-        if (oversRand < 0.6) { // 60% chance: 17.0 - 19.5 overs
-            t2OversDecimal = Math.floor(Math.random() * (19 - 17 + 1) + 17) + (Math.floor(Math.random() * 6) / 6);
+        if (oversRand < 0.6) { // 60% chance: 15.0 - 19.5 overs
+            t2OversDecimal = Math.floor(Math.random() * (19 - 15 + 1) + 15) + (Math.floor(Math.random() * 6) / 6);
         } else { // 40% chance: 20 overs (or close like 19.x)
             t2OversDecimal = 19 + (Math.floor(Math.random() * 6) / 6); // 19.0 to 19.5
             if (t2OversDecimal < 19) t2OversDecimal = 19.0; // Ensure at least 19
             if (Math.random() < 0.5) t2OversDecimal = 20.0; // Make 20.0 common
         }
-         t2OversDecimal = Math.min(20.0, Math.max(17.0, parseFloat(t2OversDecimal.toFixed(1)))); // Clamp & format
+         t2OversDecimal = Math.min(20.0, Math.max(15.0, parseFloat(t2OversDecimal.toFixed(1)))); // Clamp & format
 
     } else {
         // Chase Failure
-        t2Runs = Math.floor(Math.random() * (target - 1 - Math.max(80, target - 80) + 1)) + Math.max(80, target - 80);
+        // More variation for bigger NRR differences
+        t2Runs = Math.floor(Math.random() * (target - 1 - Math.max(60, target - 100) + 1)) + Math.max(60, target - 100);
         t2Runs = Math.max(0, t2Runs); // Ensure non-negative
         // Simulate overs: often 20, sometimes bowled out earlier
         const oversRand = Math.random();
-         if (oversRand < 0.7) { // 70% chance: 20 overs
+         if (oversRand < 0.6) { // 60% chance: 20 overs
              t2OversDecimal = 20.0;
-         } else { // 30% chance: 18.0 - 19.5 overs
-             t2OversDecimal = Math.floor(Math.random() * (19 - 18 + 1) + 18) + (Math.floor(Math.random() * 6) / 6);
-             t2OversDecimal = Math.min(19.5, Math.max(18.0, parseFloat(t2OversDecimal.toFixed(1)))); // Clamp & format
+         } else { // 40% chance: 16.0 - 19.5 overs
+             t2OversDecimal = Math.floor(Math.random() * (19 - 16 + 1) + 16) + (Math.floor(Math.random() * 6) / 6);
+             t2OversDecimal = Math.min(19.5, Math.max(16.0, parseFloat(t2OversDecimal.toFixed(1)))); // Clamp & format
          }
     }
 
@@ -1371,12 +1580,217 @@ function simulateTeamFirstPercentage(teamName, trials) {
         });
         // Sort by points, NRR, wins, then name
         simData.sort((a, b) => {
-            if (b.points !== a.points) return b.points - a.points;
-            if (b.net_run_rate !== a.net_run_rate) return b.net_run_rate - a.net_run_rate;
-            if (b.won !== a.won) return b.won - a.won;
-            return a.team.localeCompare(b.team);
+          if (b.points !== a.points) return b.points - a.points;
+          if (b.net_run_rate !== a.net_run_rate) return b.net_run_rate - a.net_run_rate;
+          return 0;
         });
-        if (simData[0].team === teamName) firstCount++;
+
+        // Count top 4
+        simData.slice(0, 4).forEach(t => counts[t.team]++);
     }
-    return ((firstCount / trials) * 100).toFixed(2);
+
+    // Calculate probabilities
+    const probabilities = {};
+    baseData.forEach(team => {
+        probabilities[team.team] = counts[team.team] / trials;
+    });
+
+    return probabilities;
+}
+
+function handleRandomizeClick() {
+    // Provide immediate visual feedback
+    const randomizeBtn = document.getElementById('randomizeBtn');
+    if (randomizeBtn) {
+      randomizeBtn.style.backgroundColor = "rgba(255, 255, 255, 0.2)";
+      setTimeout(() => randomizeBtn.style.backgroundColor = "", 100);
+    }
+    
+    if (!Array.isArray(remainingMatchesData)) return;
+    
+    // Check if a user has selected a favorite team
+    const teamSelect = document.getElementById('teamSelect');
+    const favoriteTeam = teamSelect ? teamSelect.value : null;
+    const simResultDiv = document.getElementById('simResult');
+    
+    // Clear matchSelections first for immediate UI reset
+    matchSelections = {};
+    renderMatches();
+    
+    // Generate random results in the background
+    setTimeout(() => {
+      if (favoriteTeam) {
+        // Create a copy of initial data to work with
+        const tempData = JSON.parse(JSON.stringify(initialPointsData));
+        
+        remainingMatchesData.forEach(match => {
+          if (hiddenMatchNumbers.includes(Number(match.match_number))) return;
+          
+          const matchNumber = match.match_number;
+          const [t1Name, t2Name] = match.teams.split(' vs ').map(s => s.trim());
+          
+          // If match involves favorite team, make them win
+          if (t1Name === favoriteTeam || t2Name === favoriteTeam) {
+            // Team selection (favorite team wins)
+            const winner = (t1Name === favoriteTeam) ? t1Name : t2Name;
+            
+            // Generate results with favorable outcome
+            let result;
+            if (t1Name === favoriteTeam) {
+              result = {
+                winner: t1Name,
+                scores: {
+                  team1: { r: 180, oStr: "20", oDec: 20 },
+                  team2: { r: 160, oStr: "20", oDec: 20 }
+                }
+              };
+            } else {
+              result = {
+                winner: t2Name,
+                scores: {
+                  team1: { r: 160, oStr: "20", oDec: 20 },
+                  team2: { r: 180, oStr: "20", oDec: 20 }
+                }
+              };
+            }
+            
+            matchSelections[matchNumber] = { 
+              winner: result.winner, 
+              scores: result.scores 
+            };
+            
+            // Update temp data to track standings
+            const team1 = tempData.find(t => t.team === t1Name);
+            const team2 = tempData.find(t => t.team === t2Name);
+            
+            if (team1 && team2) {
+              team1.played++;
+              team2.played++;
+              
+              if (result.winner === t1Name) {
+                team1.won++;
+                team2.lost++;
+                team1.points += 2;
+              } else {
+                team2.won++;
+                team1.lost++;
+                team2.points += 2;
+              }
+            }
+          } else {
+            // For matches not involving favorite team
+            // Check if either team is ahead of favorite team
+            const favoriteTeamData = tempData.find(t => t.team === favoriteTeam);
+            const team1Data = tempData.find(t => t.team === t1Name);
+            const team2Data = tempData.find(t => t.team === t2Name);
+            
+            if (favoriteTeamData && team1Data && team2Data) {
+              // If both teams have more points than favorite team, make one lose
+              if (team1Data.points > favoriteTeamData.points && 
+                  team2Data.points > favoriteTeamData.points) {
+                // Choose the team with more points to lose
+                const winner = team1Data.points > team2Data.points ? t2Name : t1Name;
+                
+                const result = {
+                  winner: winner,
+                  scores: winner === t1Name ? 
+                    { team1: { r: 180, oStr: "20", oDec: 20 }, team2: { r: 160, oStr: "20", oDec: 20 } } :
+                    { team1: { r: 160, oStr: "20", oDec: 20 }, team2: { r: 180, oStr: "20", oDec: 20 } }
+                };
+                
+                matchSelections[matchNumber] = { 
+                  winner: result.winner, 
+                  scores: result.scores 
+                };
+                
+                // Update data
+                team1Data.played++;
+                team2Data.played++;
+                
+                if (result.winner === t1Name) {
+                  team1Data.won++;
+                  team2Data.lost++;
+                  team1Data.points += 2;
+                } else {
+                  team2Data.won++;
+                  team1Data.lost++;
+                  team2Data.points += 2;
+                }
+              } else {
+                // Normal randomization for other matches
+                const result = generateRandomMatchResult(t1Name, t2Name);
+                matchSelections[matchNumber] = { 
+                  winner: result.winner, 
+                  scores: result.scores 
+                };
+                
+                // Update data
+                team1Data.played++;
+                team2Data.played++;
+                
+                if (result.winner === t1Name) {
+                  team1Data.won++;
+                  team2Data.lost++;
+                  team1Data.points += 2;
+                } else if (result.winner === t2Name) {
+                  team2Data.won++;
+                  team1Data.lost++;
+                  team2Data.points += 2;
+                } else if (result.winner === 'NO_RESULT') {
+                  team1Data.no_result++;
+                  team2Data.no_result++;
+                  team1Data.points++;
+                  team2Data.points++;
+                }
+              }
+            } else {
+              // Fallback to normal randomization
+              const result = generateRandomMatchResult(t1Name, t2Name);
+              matchSelections[matchNumber] = { 
+                winner: result.winner, 
+                scores: result.scores 
+              };
+            }
+          }
+        });
+        
+        // Check if the favorite team is in top 4
+        tempData.sort((a, b) => {
+          if (b.points !== a.points) return b.points - a.points;
+          if (b.net_run_rate !== a.net_run_rate) return b.net_run_rate - a.net_run_rate;
+          return 0;
+        });
+        
+        const favoriteRank = tempData.findIndex(t => t.team === favoriteTeam) + 1;
+        
+        if (favoriteRank <= 4) {
+          if (simResultDiv) {
+            simResultDiv.innerHTML = `<span style="color: #4db6ac;">Successfully placed ${favoriteTeam} in the top 4 (position #${favoriteRank})!</span>`;
+          }
+        } else {
+          if (simResultDiv) {
+            simResultDiv.innerHTML = `<span style="color: #ff6b6b;">Sorry, couldn't get ${favoriteTeam} into top 4. Best position: #${favoriteRank}</span>`;
+          }
+        }
+      } else {
+        // No favorite team, just randomize normally
+        remainingMatchesData.forEach(match => {
+          if (hiddenMatchNumbers.includes(Number(match.match_number))) return;
+          
+          const matchNumber = match.match_number;
+          const [t1Name, t2Name] = match.teams.split(' vs ').map(s => s.trim());
+          
+          const result = generateRandomMatchResult(t1Name, t2Name);
+          matchSelections[matchNumber] = { 
+            winner: result.winner, 
+            scores: result.scores 
+          };
+        });
+      }
+      
+      saveSelections();
+      renderMatches();
+      updateTableFromSelections();
+      applyMatchFilter();
+    }, 0);
 }
