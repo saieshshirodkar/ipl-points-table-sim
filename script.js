@@ -1,6 +1,6 @@
 // Initial Data (Points Table Snapshot)
 const rawPointsData = {
-  "updated": "2025-04-25",
+  "updated": "2025-04-26",
   "points_table": [
     {
       "position": 1,
@@ -49,12 +49,12 @@ const rawPointsData = {
     {
       "position": 5,
       "team": "Punjab Kings",
-      "matches_played": 8,
+      "matches_played": 9,
       "wins": 5,
       "losses": 3,
       "ties": 0,
-      "no_results": 0,
-      "points": 10,
+      "no_results": 1,
+      "points": 11,
       "net_run_rate": 0.177
     },
     {
@@ -71,12 +71,12 @@ const rawPointsData = {
     {
       "position": 7,
       "team": "Kolkata Knight Riders",
-      "matches_played": 8,
+      "matches_played": 9,
       "wins": 3,
       "losses": 5,
       "ties": 0,
-      "no_results": 0,
-      "points": 6,
+      "no_results": 1,
+      "points": 7,
       "net_run_rate": 0.212
     },
     {
@@ -1165,6 +1165,16 @@ function updateTableFromSelections() {
   // Create a deep copy of the initial data with ESTIMATED stats
   let updatedPointsData = JSON.parse(JSON.stringify(initialPointsData));
 
+  // If there are no user selections, restore NRRs exactly from rawPointsData
+  if (!matchSelections || Object.keys(matchSelections).length === 0) {
+    // Use the original NRR from rawPointsData for display
+    updatedPointsData.forEach((team, idx) => {
+      if (rawPointsData.points_table[idx] && rawPointsData.points_table[idx].team === team.team) {
+        team.net_run_rate = rawPointsData.points_table[idx].net_run_rate;
+      }
+    });
+  }
+
   // Reset calculated stats back to estimated initial values before applying selections
   updatedPointsData.forEach(team => {
       team.played = team.played; // Keep original played
@@ -1174,12 +1184,11 @@ function updateTableFromSelections() {
       team.points = team.points;
 
       // Use the estimated initial runs/overs as the starting point for this calculation cycle
-      team.runsFor = team.initialRunsFor;
-      team.oversFacedDecimal = team.initialOversFacedDecimal;
-      team.runsAgainst = team.initialRunsAgainst;
-      team.oversBowledDecimal = team.initialOversBowledDecimal;
-      // NRR will be recalculated at the end
-  });
+      team.runsFor = team.initialRunsFor || 0;
+      team.oversFacedDecimal = team.initialOversFacedDecimal || 0;
+      team.runsAgainst = team.initialRunsAgainst || 0;
+      team.oversBowledDecimal = team.initialOversBowledDecimal || 0;
+  }); // End reset
 
   // Process match selections and update cumulative stats
   remainingMatchesData.forEach(matchInfo => {
@@ -1755,7 +1764,11 @@ if (teamSelect && runSimBtn && simResultDiv && qualifySimBtn) {
 
             // Update the specific team result display
             const teamObj = initialPointsData.find(t => t.team === selectedTeam);
-            let percent = teamObj && teamObj.qualProbability ? (teamObj.qualProbability * 100).toFixed(2) : '0.00';
+            // Use the latest simulation result for this team from qualProbs
+            let percent = '0.00';
+            if (qualProbs && qualProbs[selectedTeam] && typeof qualProbs[selectedTeam].qualify === 'number') {
+                percent = (qualProbs[selectedTeam].qualify * 100).toFixed(2);
+            }
             qualifySimBtn.innerHTML = 'Playoffs Chances'; // Restore button text
             simResultDiv.innerHTML = `${selectedTeam} playoffs chance: ${percent}%`;
             qualifySimBtn.disabled = false;
@@ -1766,6 +1779,8 @@ if (teamSelect && runSimBtn && simResultDiv && qualifySimBtn) {
 
 function simulateTeamFirstPercentage(teamName, trials) {
     let firstCount = 0;
+    let counts = {};
+    initialPointsData.forEach(team => { counts[team.team] = 0; });
     for (let i = 0; i < trials; i++) {
         // Deep copy initial state
         const simData = JSON.parse(JSON.stringify(initialPointsData));
@@ -1800,17 +1815,13 @@ function simulateTeamFirstPercentage(teamName, trials) {
           return 0;
         });
 
-        // Count top 4
+        // Count first place
+        if (simData[0].team === teamName) firstCount++;
+        // Count top 4 for possible future use
         simData.slice(0, 4).forEach(t => counts[t.team]++);
     }
-
-    // Calculate probabilities
-    const probabilities = {};
-    baseData.forEach(team => {
-        probabilities[team.team] = counts[team.team] / trials;
-    });
-
-    return probabilities;
+    // Return percentage for first place
+    return ((firstCount / trials) * 100).toFixed(2);
 }
 
 function handleRandomizeClick() {
