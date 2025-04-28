@@ -4,29 +4,40 @@ const rawPointsData = {
   "points_table": [
     {
       "position": 1,
-      "team": "Gujarat Titans",
-      "matches_played": 8,
-      "wins": 6,
-      "losses": 2,
+      "team": "Royal Challengers Bengaluru",
+      "matches_played": 10,
+      "wins": 7,
+      "losses": 3,
       "ties": 0,
       "no_results": 0,
-      "points": 12,
-      "net_run_rate": 1.104
+      "points": 14,
+      "net_run_rate": 0.521
     },
     {
       "position": 2,
-      "team": "Delhi Capitals",
-      "matches_played": 8,
+      "team": "Mumbai Indians",
+      "matches_played": 10,
       "wins": 6,
-      "losses": 2,
+      "losses": 4,
       "ties": 0,
       "no_results": 0,
       "points": 12,
-      "net_run_rate": 0.657
+      "net_run_rate": 0.889
     },
     {
       "position": 3,
-      "team": "Royal Challengers Bengaluru",
+      "team": "Gujarat Titans",
+      "matches_played": 9,
+      "wins": 6,
+      "losses": 3,
+      "ties": 0,
+      "no_results": 0,
+      "points": 12,
+      "net_run_rate": 0.748
+    },
+    {
+      "position": 4,
+      "team": "Delhi Capitals",
       "matches_played": 9,
       "wins": 6,
       "losses": 3,
@@ -34,17 +45,6 @@ const rawPointsData = {
       "no_results": 0,
       "points": 12,
       "net_run_rate": 0.482
-    },
-    {
-      "position": 4,
-      "team": "Mumbai Indians",
-      "matches_played": 9,
-      "wins": 5,
-      "losses": 4,
-      "ties": 0,
-      "no_results": 0,
-      "points": 10,
-      "net_run_rate": 0.673
     },
     {
       "position": 5,
@@ -60,13 +60,13 @@ const rawPointsData = {
     {
       "position": 6,
       "team": "Lucknow Super Giants",
-      "matches_played": 9,
+      "matches_played": 10,
       "wins": 5,
-      "losses": 4,
+      "losses": 5,
       "ties": 0,
       "no_results": 0,
       "points": 10,
-      "net_run_rate": -0.054
+      "net_run_rate": -0.325
     },
     {
       "position": 7,
@@ -81,6 +81,17 @@ const rawPointsData = {
     },
     {
       "position": 8,
+      "team": "Rajasthan Royals",
+      "matches_played": 10,
+      "wins": 3,
+      "losses": 7,
+      "ties": 0,
+      "no_results": 0,
+      "points": 6,
+      "net_run_rate": -0.349
+    },
+    {
+      "position": 9,
       "team": "Sunrisers Hyderabad",
       "matches_played": 9,
       "wins": 3,
@@ -91,17 +102,6 @@ const rawPointsData = {
       "net_run_rate": -1.103
     },
     {
-      "position": 9,
-      "team": "Rajasthan Royals",
-      "matches_played": 9,
-      "wins": 2,
-      "losses": 7,
-      "ties": 0,
-      "no_results": 0,
-      "points": 4,
-      "net_run_rate": -0.625
-    },
-    {
       "position": 10,
       "team": "Chennai Super Kings",
       "matches_played": 9,
@@ -110,7 +110,7 @@ const rawPointsData = {
       "ties": 0,
       "no_results": 0,
       "points": 4,
-      "net_run_rate": -1.392
+      "net_run_rate": -1.302
     }
   ]
 };
@@ -288,52 +288,24 @@ function simulateQualification(baseData, currentSelections, trials = 20000) {
         return {};
     }
 
-    // Initialize counters for qualification outcomes
     const counts = {};
-    const top2Counts = {}; // For direct qualifier counts (top 2)
-    const playoffCounts = {}; // For playoff qualifiers (3rd and 4th)
-    
-    // Initialize all counters
-    baseData.forEach(team => {
-        counts[team.team] = 0;
-        top2Counts[team.team] = 0;
-        playoffCounts[team.team] = 0;
-    });
+    baseData.forEach(team => counts[team.team] = 0);
 
     // Filter remaining matches to only include those not yet played according to baseData
+    // This assumes baseData reflects the *start* state before any simulation/selections
     const matchesToSimulate = remainingMatchesData.filter(match => {
+        // Basic check if match teams exist in baseData - more robust checks might be needed
         const [t1Name, t2Name] = match.teams.split(' vs ').map(s => s.trim());
         const t1Base = baseData.find(t => t.team === t1Name);
         const t2Base = baseData.find(t => t.team === t2Name);
-        return t1Base && t2Base; 
+        // Simple heuristic: if a match involves a team not in base data, maybe skip?
+        // Or, more accurately, check if the match date is after the base data's 'as of' date
+        return t1Base && t2Base; // Keep it simple for now
     });
 
-    // Calculate current form factors for more realistic simulation
-    const formFactors = {};
-    baseData.forEach(team => {
-        // Calculate win percentage as a form factor (min 30% chance)
-        const winPct = team.played > 0 ? team.won / team.played : 0.5;
-        // Blend win percentage (70% weight) with 50% baseline (30% weight) to avoid extremes
-        formFactors[team.team] = 0.3 + (0.7 * winPct);
-    });
-    
-    // Run the Monte Carlo simulation
     for (let i = 0; i < trials; i++) {
-        // Deep copy initial state for this trial
+        // Deep copy initial state for this trial - Use the provided baseData
         const simData = JSON.parse(JSON.stringify(baseData));
-        
-        // Track NRR components for each team
-        const nrrComponents = {};
-        simData.forEach(team => {
-            // Estimate initial runs scored/conceded based on current NRR
-            const estimate = estimateInitialStatsForNRR(team);
-            nrrComponents[team.team] = {
-                runsScored: estimate.runsScored,
-                runsConceded: estimate.runsConceded,
-                oversPlayed: estimate.oversPlayed,
-                oversBowled: estimate.oversBowled
-            };
-        });
 
         // Simulate each remaining match
         matchesToSimulate.forEach(match => {
@@ -345,7 +317,6 @@ function simulateQualification(baseData, currentSelections, trials = 20000) {
             const selection = currentSelections[match.match_number];
             let winner = null;
             let isNoResult = false;
-            let nrrImpact = null;
 
             // Check if this match has a manual selection
             if (selection && selection.winner) {
@@ -353,33 +324,20 @@ function simulateQualification(baseData, currentSelections, trials = 20000) {
                     isNoResult = true;
                 } else {
                     winner = selection.winner;
-                    // If we have score details, use them for NRR calculation
-                    if (selection.scores) {
-                        nrrImpact = calculateNRRImpactFromScores(selection.scores, t1Name, t2Name);
-                    }
                 }
             } else {
-                // No manual selection, use weighted randomization based on form
-                const t1Strength = formFactors[t1Name];
-                const t2Strength = formFactors[t2Name];
-                const totalStrength = t1Strength + t2Strength;
-                const t1WinProb = t1Strength / totalStrength * 0.95; // 95% of probability mass to wins
-                
+                // No manual selection, randomize outcome
                 const rand = Math.random();
                 if (rand < 0.05) { // 5% chance of No Result
                     isNoResult = true;
-                } else if (rand < (0.05 + t1WinProb)) {
+                } else if (rand < 0.525) { // ~47.5% chance for team 1
                     winner = t1Name;
-                    // Generate random score for NRR impact (winner usually has positive NRR)
-                    nrrImpact = generateRandomNRRImpact(true);
-                } else {
+                } else { // ~47.5% chance for team 2
                     winner = t2Name;
-                    // Generate random score for NRR impact (loser)
-                    nrrImpact = generateRandomNRRImpact(false);
                 }
             }
 
-            // Apply the result to standings and NRR components
+            // Apply the result (selected or random)
             if (t1.played < 14) {
                 t1.played++;
             }
@@ -392,150 +350,34 @@ function simulateQualification(baseData, currentSelections, trials = 20000) {
             } else if (winner === t1Name) {
                 t1.won++; t1.points += 2;
                 t2.lost++;
-                
-                // Apply NRR impact if available
-                if (nrrImpact) {
-                    updateNRRComponents(nrrComponents, t1Name, t2Name, nrrImpact);
-                }
             } else if (winner === t2Name) {
                 t2.won++; t2.points += 2;
                 t1.lost++;
-                
-                // Apply NRR impact if available
-                if (nrrImpact) {
-                    updateNRRComponents(nrrComponents, t2Name, t1Name, nrrImpact);
-                }
             }
-        });
-        
-        // Calculate final NRR for all teams
-        simData.forEach(team => {
-            const comp = nrrComponents[team.team];
-            if (comp.oversPlayed > 0 && comp.oversBowled > 0) {
-                team.net_run_rate = ((comp.runsScored / comp.oversPlayed) - (comp.runsConceded / comp.oversBowled)).toFixed(3);
-                team.net_run_rate = parseFloat(team.net_run_rate); // Convert back to number
-            }
+            // Note: NRR calculation is complex and not included in this simplified simulation
+            // Tie-breaking relies on points, then estimated NRR (from initial), then wins, then name
         });
 
-        // Sort by points, NRR, wins, then name (official IPL tiebreakers)
+        // Sort by points, NRR (initial estimate), wins, then name
         simData.sort((a, b) => {
             if (b.points !== a.points) return b.points - a.points;
+            // Use the initial NRR as a tie-breaker; simulating NRR changes is too complex here
             if (b.net_run_rate !== a.net_run_rate) return b.net_run_rate - a.net_run_rate;
             if (b.won !== a.won) return b.won - a.won;
             return a.team.localeCompare(b.team);
         });
 
-        // Count top 4 - standard qualification
+        // Count top 4
         simData.slice(0, 4).forEach(t => counts[t.team]++);
-        
-        // Count top 2 - direct qualifiers
-        simData.slice(0, 2).forEach(t => top2Counts[t.team]++);
-        
-        // Count positions 3-4 - playoff qualification
-        simData.slice(2, 4).forEach(t => playoffCounts[t.team]++);
     }
 
-    // Calculate probabilities with additional details
+    // Calculate probabilities
     const probabilities = {};
     baseData.forEach(team => {
-        probabilities[team.team] = {
-            qualify: counts[team.team] / trials, // Overall qualification (top 4)
-            directQualify: top2Counts[team.team] / trials, // Top 2 finish
-            playoffQualify: playoffCounts[team.team] / trials // 3rd/4th finish
-        };
+        probabilities[team.team] = counts[team.team] / trials;
     });
 
     return probabilities;
-}
-
-// Helper functions for the improved qualification simulation
-
-// Estimate initial runs/overs for NRR calculation based on existing NRR
-function estimateInitialStatsForNRR(team) {
-    const nrr = team.net_run_rate || 0;
-    const played = team.played || 0;
-    
-    // Create reasonable baseline numbers that would result in the given NRR
-    let runsScored, runsConceded, oversPlayed, oversBowled;
-    
-    if (played === 0) {
-        // If no matches played, use neutral baseline
-        runsScored = 0;
-        runsConceded = 0;
-        oversPlayed = 0.1; // Small non-zero value to avoid division by zero
-        oversBowled = 0.1;
-    } else {
-        // Scale these values based on matches played for more realistic numbers
-        const baseOvers = played * 20; // 20 overs per match
-        oversPlayed = baseOvers;
-        oversBowled = baseOvers;
-        
-        // Base run rate around 8 runs per over (typical T20 rate)
-        const baseRunRate = 8;
-        runsScored = baseOvers * (baseRunRate + (nrr / 2));
-        runsConceded = baseOvers * (baseRunRate - (nrr / 2));
-    }
-    
-    return { runsScored, runsConceded, oversPlayed, oversBowled };
-}
-
-// Generate random NRR impact for a simulated match
-function generateRandomNRRImpact(isWinner) {
-    // Generate more realistic score ranges for T20 cricket
-    const winningScore = Math.floor(140 + Math.random() * 60); // 140-200 range
-    
-    // Margin of victory varies based on winner/loser
-    let margin;
-    if (isWinner) {
-        // Winners usually have positive NRR impact
-        margin = Math.floor(10 + Math.random() * 50); // 10-60 run margin
-    } else {
-        // Less extreme for losses
-        margin = Math.floor(5 + Math.random() * 25); // 5-30 run margin
-    }
-    
-    const losingScore = winningScore - margin;
-    
-    // For simplicity, assume full 20 overs for both teams
-    return {
-        winnerRuns: winningScore,
-        loserRuns: losingScore,
-        winnerOvers: 20,
-        loserOvers: 20
-    };
-}
-
-// Calculate NRR impact from explicit match scores
-function calculateNRRImpactFromScores(scores, team1, team2) {
-    // This is a simplified version - would need actual score details
-    // from the selection.scores object
-    if (!scores || !scores[team1] || !scores[team2]) {
-        return null;
-    }
-    
-    // This implementation depends on the structure of your scores object
-    // For now, return a placeholder
-    return {
-        winnerRuns: 160,
-        loserRuns: 140,
-        winnerOvers: 20,
-        loserOvers: 20
-    };
-}
-
-// Update NRR components based on match results
-function updateNRRComponents(nrrComponents, winnerName, loserName, nrrImpact) {
-    // Update winner's components
-    nrrComponents[winnerName].runsScored += nrrImpact.winnerRuns;
-    nrrComponents[winnerName].runsConceded += nrrImpact.loserRuns;
-    nrrComponents[winnerName].oversPlayed += nrrImpact.winnerOvers;
-    nrrComponents[winnerName].oversBowled += nrrImpact.loserOvers;
-    
-    // Update loser's components
-    nrrComponents[loserName].runsScored += nrrImpact.loserRuns;
-    nrrComponents[loserName].runsConceded += nrrImpact.winnerRuns;
-    nrrComponents[loserName].oversPlayed += nrrImpact.loserOvers;
-    nrrComponents[loserName].oversBowled += nrrImpact.winnerOvers;
 }
 
 // --- Local Storage ---
@@ -758,35 +600,8 @@ function renderTable(data) {
       row.insertCell().textContent = team.no_result;
       row.insertCell().textContent = team.points;
       row.insertCell().textContent = displayNRR;
-      
-      // Create qual percentage cell with tooltip showing detailed breakdown
-      const qualCell = row.insertCell();
-      
-      if (team.qualData && team.qualData.qualify > 0) {
-          const qualPct = (team.qualData.qualify * 100).toFixed(1);
-          qualCell.textContent = `${qualPct}%`;
-          
-          // Set cell color based on qualification percentage
-          if (team.qualData.qualify >= 0.95) {
-              qualCell.style.color = '#00b300'; // Bright green for near-certain
-              qualCell.style.fontWeight = 'bold';
-          } else if (team.qualData.qualify >= 0.75) {
-              qualCell.style.color = '#5cb85c'; // Medium green for likely
-          } else if (team.qualData.qualify >= 0.5) {
-              qualCell.style.color = '#f0ad4e'; // Orange for toss-up
-          } else if (team.qualData.qualify >= 0.25) {
-              qualCell.style.color = '#d9534f'; // Light red for unlikely
-          } else {
-              qualCell.style.color = '#cc0000'; // Dark red for very unlikely
-          }
-          
-          // Add tooltip with detailed breakdown
-          qualCell.title = `Overall: ${qualPct}%\nTop 2: ${(team.qualData.directQualify*100).toFixed(1)}%\nPlayoffs (3-4): ${(team.qualData.playoffQualify*100).toFixed(1)}%`;
-          qualCell.classList.add('tooltip-cell');
-      } else {
-          qualCell.textContent = '—';
-          qualCell.style.color = '#999';
-      }
+      // Placeholder for qualification probability
+      row.insertCell().textContent = team.qualProbability ? `${(team.qualProbability*100).toFixed(1)}%` : '—';
   });
 }
 
@@ -1165,16 +980,6 @@ function updateTableFromSelections() {
   // Create a deep copy of the initial data with ESTIMATED stats
   let updatedPointsData = JSON.parse(JSON.stringify(initialPointsData));
 
-  // If there are no user selections, restore NRRs exactly from rawPointsData
-  if (!matchSelections || Object.keys(matchSelections).length === 0) {
-    // Use the original NRR from rawPointsData for display
-    updatedPointsData.forEach((team, idx) => {
-      if (rawPointsData.points_table[idx] && rawPointsData.points_table[idx].team === team.team) {
-        team.net_run_rate = rawPointsData.points_table[idx].net_run_rate;
-      }
-    });
-  }
-
   // Reset calculated stats back to estimated initial values before applying selections
   updatedPointsData.forEach(team => {
       team.played = team.played; // Keep original played
@@ -1184,11 +989,12 @@ function updateTableFromSelections() {
       team.points = team.points;
 
       // Use the estimated initial runs/overs as the starting point for this calculation cycle
-      team.runsFor = team.initialRunsFor || 0;
-      team.oversFacedDecimal = team.initialOversFacedDecimal || 0;
-      team.runsAgainst = team.initialRunsAgainst || 0;
-      team.oversBowledDecimal = team.initialOversBowledDecimal || 0;
-  }); // End reset
+      team.runsFor = team.initialRunsFor;
+      team.oversFacedDecimal = team.initialOversFacedDecimal;
+      team.runsAgainst = team.initialRunsAgainst;
+      team.oversBowledDecimal = team.initialOversBowledDecimal;
+      // NRR will be recalculated at the end
+  });
 
   // Process match selections and update cumulative stats
   remainingMatchesData.forEach(matchInfo => {
@@ -1304,46 +1110,16 @@ function updateTableFromSelections() {
   if (allMatchesComplete) {
     // If all matches are complete, top 4 have 100% qualification, others 0%
     updatedPointsData.forEach(team => {
-      // Set detailed qualification data for teams
-      if (team.position <= 2) {
-        // Top 2 teams (direct qualifiers)
-        team.qualData = {
-          qualify: 1.0,
-          directQualify: 1.0,
-          playoffQualify: 0.0
-        };
-      } else if (team.position <= 4) {
-        // Teams in positions 3-4 (playoff qualifiers)
-        team.qualData = {
-          qualify: 1.0,
-          directQualify: 0.0,
-          playoffQualify: 1.0
-        };
-      } else {
-        // Teams that didn't qualify
-        team.qualData = {
-          qualify: 0.0,
-          directQualify: 0.0,
-          playoffQualify: 0.0
-        };
-      }
+      // Top 4 teams have 100% qualification, others have null (will display as -)
+      team.qualProbability = team.position <= 4 ? 1.0 : null;
     });
   } else {
-    // Not all matches complete, run simulations with more trials for better accuracy
-    const qualProbs = simulateQualification(initialPointsData, matchSelections, 10000);
+    // Not all matches complete, run simulations
+    const qualProbs = simulateQualification(initialPointsData, matchSelections, 5000);
     
-    // Add detailed qualification data to each team
+    // Add qualification probability to each team
     updatedPointsData.forEach(team => {
-      if (qualProbs[team.team]) {
-        team.qualData = qualProbs[team.team];
-      } else {
-        // Default values if no probability data available
-        team.qualData = {
-          qualify: 0,
-          directQualify: 0,
-          playoffQualify: 0
-        };
-      }
+      team.qualProbability = qualProbs[team.team] || 0;
     });
   }
 
@@ -1764,11 +1540,7 @@ if (teamSelect && runSimBtn && simResultDiv && qualifySimBtn) {
 
             // Update the specific team result display
             const teamObj = initialPointsData.find(t => t.team === selectedTeam);
-            // Use the latest simulation result for this team from qualProbs
-            let percent = '0.00';
-            if (qualProbs && qualProbs[selectedTeam] && typeof qualProbs[selectedTeam].qualify === 'number') {
-                percent = (qualProbs[selectedTeam].qualify * 100).toFixed(2);
-            }
+            let percent = teamObj && teamObj.qualProbability ? (teamObj.qualProbability * 100).toFixed(2) : '0.00';
             qualifySimBtn.innerHTML = 'Playoffs Chances'; // Restore button text
             simResultDiv.innerHTML = `${selectedTeam} playoffs chance: ${percent}%`;
             qualifySimBtn.disabled = false;
@@ -1779,8 +1551,6 @@ if (teamSelect && runSimBtn && simResultDiv && qualifySimBtn) {
 
 function simulateTeamFirstPercentage(teamName, trials) {
     let firstCount = 0;
-    let counts = {};
-    initialPointsData.forEach(team => { counts[team.team] = 0; });
     for (let i = 0; i < trials; i++) {
         // Deep copy initial state
         const simData = JSON.parse(JSON.stringify(initialPointsData));
@@ -1815,13 +1585,17 @@ function simulateTeamFirstPercentage(teamName, trials) {
           return 0;
         });
 
-        // Count first place
-        if (simData[0].team === teamName) firstCount++;
-        // Count top 4 for possible future use
+        // Count top 4
         simData.slice(0, 4).forEach(t => counts[t.team]++);
     }
-    // Return percentage for first place
-    return ((firstCount / trials) * 100).toFixed(2);
+
+    // Calculate probabilities
+    const probabilities = {};
+    baseData.forEach(team => {
+        probabilities[team.team] = counts[team.team] / trials;
+    });
+
+    return probabilities;
 }
 
 function handleRandomizeClick() {
