@@ -4,6 +4,28 @@ const rawPointsData = {
   "points_table": [
     {
       "position": 1,
+      "team": "Mumbai Indians",
+      "matches_played": 11,
+      "wins": 7,
+      "losses": 4,
+      "ties": 0,
+      "no_results": 0,
+      "points": 14,
+      "net_run_rate": 1.274
+    },
+    {
+      "position": 2,
+      "team": "Gujarat Titans",
+      "matches_played": 10,
+      "wins": 7,
+      "losses": 3,
+      "ties": 0,
+      "no_results": 0,
+      "points": 14,
+      "net_run_rate": 0.867
+    },
+    {
+      "position": 3,
       "team": "Royal Challengers Bengaluru",
       "matches_played": 10,
       "wins": 7,
@@ -14,48 +36,26 @@ const rawPointsData = {
       "net_run_rate": 0.521
     },
     {
-      "position": 2,
-      "team": "Mumbai Indians",
+      "position": 4,
+      "team": "Punjab Kings",
+      "matches_played": 10,
+      "wins": 6,
+      "losses": 3,
+      "ties": 0,
+      "no_results": 1,
+      "points": 13,
+      "net_run_rate": 0.199
+    },
+    {
+      "position": 5,
+      "team": "Delhi Capitals",
       "matches_played": 10,
       "wins": 6,
       "losses": 4,
       "ties": 0,
       "no_results": 0,
       "points": 12,
-      "net_run_rate": 0.889
-    },
-    {
-      "position": 3,
-      "team": "Gujarat Titans",
-      "matches_played": 9,
-      "wins": 6,
-      "losses": 3,
-      "ties": 0,
-      "no_results": 0,
-      "points": 12,
-      "net_run_rate": 0.748
-    },
-    {
-      "position": 4,
-      "team": "Delhi Capitals",
-      "matches_played": 9,
-      "wins": 6,
-      "losses": 3,
-      "ties": 0,
-      "no_results": 0,
-      "points": 12,
-      "net_run_rate": 0.482
-    },
-    {
-      "position": 5,
-      "team": "Punjab Kings",
-      "matches_played": 9,
-      "wins": 5,
-      "losses": 3,
-      "ties": 0,
-      "no_results": 1,
-      "points": 11,
-      "net_run_rate": 0.177
+      "net_run_rate": 0.362
     },
     {
       "position": 6,
@@ -71,46 +71,49 @@ const rawPointsData = {
     {
       "position": 7,
       "team": "Kolkata Knight Riders",
-      "matches_played": 9,
-      "wins": 3,
+      "matches_played": 10,
+      "wins": 4,
       "losses": 5,
       "ties": 0,
       "no_results": 1,
-      "points": 7,
-      "net_run_rate": 0.212
+      "points": 9,
+      "net_run_rate": 0.271
     },
     {
       "position": 8,
       "team": "Rajasthan Royals",
+      "matches_played": 11,
+      "wins": 3,
+      "losses": 8,
+      "ties": 0,
+      "no_results": 0,
+      "points": 6,
+      "net_run_rate": -0.780,
+      "eliminated": true
+    },
+    {
+      "position": 9,
+      "team": "Sunrisers Hyderabad",
       "matches_played": 10,
       "wins": 3,
       "losses": 7,
       "ties": 0,
       "no_results": 0,
       "points": 6,
-      "net_run_rate": -0.349
-    },
-    {
-      "position": 9,
-      "team": "Sunrisers Hyderabad",
-      "matches_played": 9,
-      "wins": 3,
-      "losses": 6,
-      "ties": 0,
-      "no_results": 0,
-      "points": 6,
-      "net_run_rate": -1.103
+      "net_run_rate": -1.192,
+      "eliminated": true
     },
     {
       "position": 10,
       "team": "Chennai Super Kings",
-      "matches_played": 9,
+      "matches_played": 10,
       "wins": 2,
-      "losses": 7,
+      "losses": 8,
       "ties": 0,
       "no_results": 0,
       "points": 4,
-      "net_run_rate": -1.302
+      "net_run_rate": -1.211,
+      "eliminated": true
     }
   ]
 };
@@ -123,7 +126,8 @@ const initialPointsData = rawPointsData.points_table.map(item => ({
   lost: item.losses,
   no_result: item.no_results,
   points: item.points,
-  net_run_rate: item.net_run_rate
+  net_run_rate: item.net_run_rate,
+  eliminated: item.eliminated
 }));
 
 // Static fallback data for remaining matches
@@ -276,11 +280,125 @@ function estimateInitialStats(data) {
   });
 }
 
+// Seeded random number generator for consistent results
+function seededRandom(seed) {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+}
+
+// Calculate team strength based on multiple factors including form, remaining schedule difficulty, etc.
+// Used by simulateQualification to determine match outcome probabilities
+function calculateTeamStrength(team, allTeams) {
+    if (!team) return 1; // Default neutral strength
+    
+    // ---- Base strength factors ----
+    // Points are the primary indicator of strength
+    const pointsFactor = team.points / 7;  // Normalize points (typically 0-2 range)
+    
+    // Net Run Rate - important for tiebreakers and indicates performance quality
+    const nrrFactor = (team.net_run_rate + 2) / 4;  // Transform NRR to 0-1 range
+    
+    // ---- Form indicators ----
+    // Current form: win ratio of all matches played so far
+    const overallWinRatio = team.played > 0 ? team.won / team.played : 0.5;
+    
+    // Played enough games to judge form accurately? More games = more reliable data
+    const formReliability = Math.min(1, team.played / 8); // Scales from 0-1 based on matches played
+    
+    // Calculate matches remaining
+    const matchesRemaining = 14 - team.played;
+    const matchesRemainingFactor = matchesRemaining / 14; // 0-1 range, higher means more control over destiny
+    
+    // Maximum possible points team can achieve
+    const maxPossiblePoints = team.points + (matchesRemaining * 2);
+    
+    // ---- Table position factors ----
+    // Current position in the table
+    const position = allTeams.findIndex(t => t.team === team.team) + 1;
+    const positionFactor = (11 - position) / 10;  // 0-1 range (higher is better)
+    
+    // ---- Remaining schedule difficulty ----
+    // Find who team still has to play (if we have access to matchesToSimulate)
+    let scheduleStrength = 0.5; // Default medium difficulty
+    
+    // If we have remaining matches data, analyze remaining opponents
+    if (remainingMatchesData) {
+        // Filter to just this team's remaining matches
+        const teamMatches = remainingMatchesData.filter(match => {
+            const [t1, t2] = match.teams.split(' vs ').map(s => s.trim());
+            return (t1 === team.team || t2 === team.team);
+        });
+        
+        // Calculate average opponent strength
+        if (teamMatches.length > 0) {
+            let totalOpponentStrength = 0;
+            teamMatches.forEach(match => {
+                const [t1, t2] = match.teams.split(' vs ').map(s => s.trim());
+                const opponent = t1 === team.team ? t2 : t1;
+                const opponentTeam = allTeams.find(t => t.team === opponent);
+                
+                if (opponentTeam) {
+                    // Simple opponent strength based on points and NRR
+                    const opponentPoints = opponentTeam.points / 14; // 0-1 range
+                    const opponentNRR = (opponentTeam.net_run_rate + 2) / 4; // 0-1 range
+                    totalOpponentStrength += (opponentPoints * 0.7) + (opponentNRR * 0.3);
+                }
+            });
+            
+            // Lower value means easier remaining schedule (good for qualification chances)
+            scheduleStrength = teamMatches.length > 0 ? totalOpponentStrength / teamMatches.length : 0.5;
+            
+            // Invert so higher value = easier schedule = better qualification chance
+            scheduleStrength = 1 - scheduleStrength;
+        }
+    }
+    
+    // ---- Calculate overall weighted score ----
+    return (
+        // Base performance indicators
+        pointsFactor * 3.0 +                // Points are most important (highest weight)
+        nrrFactor * 1.5 +                  // NRR is quite important
+        
+        // Form indicators
+        (overallWinRatio * formReliability) * 1.2 +  // Recent form importance increases with games played
+        
+        // Position and remaining matches
+        positionFactor * 0.8 +            // Current position has some influence
+        matchesRemainingFactor * 0.5 +    // Having games in hand helps
+        
+        // Remaining schedule
+        scheduleStrength * 1.0             // Easier remaining schedule helps qualify
+    );
+}
+
+// Cache for simulation results to avoid redundant calculations
+const qualificationCache = {};
+
+// Generate a cache key from selections
+function generateCacheKey(selections) {
+    // Handle null or undefined selections
+    if (!selections) return 'empty';
+    
+    return Object.entries(selections)
+        .map(([num, sel]) => `${num}:${sel.winner}`)
+        .sort()
+        .join('|');
+}
+
 // Simulate qualification probabilities via Monte Carlo
 // Accepts the base data (usually initialPointsData) and the current manual selections
 // Respects manual selections and randomizes the rest
 // Returns an object mapping team names to qualification probabilities
 function simulateQualification(baseData, currentSelections, trials = 20000) {
+    // Check cache first to avoid redundant computations
+    const cacheKey = generateCacheKey(currentSelections);
+    if (qualificationCache[cacheKey]) {
+        console.log('Using cached qualification probabilities');
+        return qualificationCache[cacheKey];
+    }
+    
+    console.time('Qualification simulation');
+
     // Ensure baseData is an array before proceeding
     if (!Array.isArray(baseData)) {
         console.error("Error in simulateQualification: baseData is not an array. Received:", baseData);
@@ -326,13 +444,140 @@ function simulateQualification(baseData, currentSelections, trials = 20000) {
                     winner = selection.winner;
                 }
             } else {
-                // No manual selection, randomize outcome
-                const rand = Math.random();
+                // No manual selection, use seeded randomization for consistency
+                // with weighted probabilities based on team strength
+                const seedValue = i + (match.match_number * 100) + t1Name.charCodeAt(0) + t2Name.charCodeAt(0);
+                const rand = seededRandom(seedValue);
+                
+                // Calculate win probabilities based on points, NRR and current form
+                let t1Strength = calculateTeamStrength(t1, simData);
+                let t2Strength = calculateTeamStrength(t2, simData);
+                
+                // Add small head-to-head advantage for manually selected matches
+                // If team has already won against this opponent in selections, they get a boost
+                const matchUps = Object.entries(currentSelections).filter(([_, val]) => {
+                    const matchTeams = remainingMatchesData.find(m => m.match_number == _)?.teams || '';
+                    return matchTeams.includes(t1Name) && matchTeams.includes(t2Name);
+                });
+                
+                // ---- Advanced match-up analysis ----
+                
+                // Track head-to-head record in current season
+                if (matchUps.length > 0) {
+                    let t1Wins = 0, t2Wins = 0;
+                    
+                    // Count wins in head-to-head encounters
+                    matchUps.forEach(([_, result]) => {
+                        if (result.winner === t1Name) {
+                            t1Wins++;
+                        } else if (result.winner === t2Name) {
+                            t2Wins++;
+                        }
+                    });
+                    
+                    // Apply stronger boost for multiple wins (dominance factor)
+                    if (t1Wins > 0) {
+                        // Progressive boost based on win count (15% for first win, additional 10% for each extra win)
+                        t1Strength *= (1.15 + ((t1Wins - 1) * 0.1));
+                    }
+                    
+                    if (t2Wins > 0) {
+                        t2Strength *= (1.15 + ((t2Wins - 1) * 0.1));
+                    }
+                }
+                
+                // ---- Recent form analysis (last 5 matches) ----
+                // Get all match selections that have been made so far
+                const recentMatches = Object.entries(currentSelections)
+                    .filter(([matchNum, _]) => Number(matchNum) < match.match_number) // Only consider earlier matches
+                    .sort((a, b) => Number(b[0]) - Number(a[0])) // Sort by match number descending (most recent first)
+                    .slice(0, 10); // Consider last 10 matches overall
+                
+                // Track recent results for both teams
+                const t1RecentResults = [];
+                const t2RecentResults = [];
+                
+                recentMatches.forEach(([matchNum, result]) => {
+                    const matchInfo = remainingMatchesData.find(m => m.match_number == matchNum);
+                    if (!matchInfo) return;
+                    
+                    const [team1, team2] = matchInfo.teams.split(' vs ').map(s => s.trim());
+                    
+                    // Check if this match involved team 1
+                    if (team1 === t1Name || team2 === t1Name) {
+                        if (result.winner === t1Name) {
+                            t1RecentResults.push('W');
+                        } else if (result.winner === 'NO_RESULT') {
+                            t1RecentResults.push('N');
+                        } else {
+                            t1RecentResults.push('L');
+                        }
+                    }
+                    
+                    // Check if this match involved team 2
+                    if (team1 === t2Name || team2 === t2Name) {
+                        if (result.winner === t2Name) {
+                            t2RecentResults.push('W');
+                        } else if (result.winner === 'NO_RESULT') {
+                            t2RecentResults.push('N');
+                        } else {
+                            t2RecentResults.push('L');
+                        }
+                    }
+                });
+                
+                // Consider only last 5 matches for form boost
+                const t1Form = t1RecentResults.slice(0, 5);
+                const t2Form = t2RecentResults.slice(0, 5);
+                
+                // Calculate momentum based on recent results
+                // More recent results have higher weight
+                if (t1Form.length > 0) {
+                    let t1Momentum = 0;
+                    const weights = [0.35, 0.25, 0.2, 0.15, 0.05]; // Weights for 5 most recent matches (descending)
+                    
+                    t1Form.forEach((result, idx) => {
+                        if (idx < weights.length) {
+                            if (result === 'W') t1Momentum += weights[idx];
+                            else if (result === 'N') t1Momentum += weights[idx] * 0.3;
+                            // Loss adds nothing
+                        }
+                    });
+                    
+                    // Apply momentum boost (up to 25% boost for winning all recent matches)
+                    t1Strength *= (1 + t1Momentum);
+                }
+                
+                if (t2Form.length > 0) {
+                    let t2Momentum = 0;
+                    const weights = [0.35, 0.25, 0.2, 0.15, 0.05];
+                    
+                    t2Form.forEach((result, idx) => {
+                        if (idx < weights.length) {
+                            if (result === 'W') t2Momentum += weights[idx];
+                            else if (result === 'N') t2Momentum += weights[idx] * 0.3;
+                        }
+                    });
+                    
+                    t2Strength *= (1 + t2Momentum);
+                }
+                
+                const totalStrength = t1Strength + t2Strength;
+                
+                // Convert strength to probability (with minimum chance for weaker team)
+                let t1WinProb = Math.max(0.3, t1Strength / totalStrength);
+                let t2WinProb = Math.max(0.3, t2Strength / totalStrength);
+                
+                // Normalize probabilities to sum to 0.95 (leaving 0.05 for no result)
+                const normFactor = 0.95 / (t1WinProb + t2WinProb);
+                t1WinProb *= normFactor;
+                t2WinProb *= normFactor;
+                
                 if (rand < 0.05) { // 5% chance of No Result
                     isNoResult = true;
-                } else if (rand < 0.525) { // ~47.5% chance for team 1
+                } else if (rand < (0.05 + t1WinProb)) { // Weighted chance for team 1
                     winner = t1Name;
-                } else { // ~47.5% chance for team 2
+                } else { // Remaining chance for team 2
                     winner = t2Name;
                 }
             }
@@ -377,6 +622,9 @@ function simulateQualification(baseData, currentSelections, trials = 20000) {
         probabilities[team.team] = counts[team.team] / trials;
     });
 
+    // Store result in cache before returning
+    qualificationCache[cacheKey] = probabilities;
+    console.timeEnd('Qualification simulation');
     return probabilities;
 }
 
@@ -551,11 +799,29 @@ function runMonteCarloSimulations() {
 
 // --- Rendering Functions ---
 
+// Track if table data has changed to avoid unnecessary re-renders
+let lastTableData = null;
+
 function renderTable(data) {
+  console.time('Table render');
+  
+  // Check if the data is identical to last render
+  const dataString = JSON.stringify(data);
+  if (lastTableData === dataString) {
+    console.log('Skipping table render - no data changes');
+    console.timeEnd('Table render');
+    return;
+  }
+  
+  // Store current data for future comparison
+  lastTableData = dataString;
+  
+  // Create rows in memory first (DocumentFragment) for better performance
+  const fragment = document.createDocumentFragment();
   tableBody.innerHTML = ''; // Clear existing rows
 
   data.forEach(team => {
-      const row = tableBody.insertRow();
+      const row = document.createElement('tr');
       row.dataset.team = team.team; // Store full team name for filtering
 
       const colors = teamColorMap[team.team];
@@ -577,6 +843,13 @@ function renderTable(data) {
               // Slightly bolder text for playoff teams
               row.style.fontWeight = "500";
           }
+          // Special styling for eliminated teams
+          if (team.eliminated) {
+              row.style.opacity = "0.7";
+              row.style.textDecoration = "line-through";
+              row.dataset.eliminated = "true";
+              row.title = "Eliminated from playoff contention";
+          }
       }
 
       // Highlight the row if it's the currently selected filter team
@@ -592,21 +865,102 @@ function renderTable(data) {
       // Use the calculated NRR for display, with 3 decimal formatting 
       const displayNRR = typeof team.net_run_rate === 'number' ? team.net_run_rate.toFixed(3) : 'N/A';
       
-      row.insertCell().textContent = team.position;
-      row.insertCell().textContent = shortTeamName;
-      row.insertCell().textContent = team.played;
-      row.insertCell().textContent = team.won;
-      row.insertCell().textContent = team.lost;
-      row.insertCell().textContent = team.no_result;
-      row.insertCell().textContent = team.points;
-      row.insertCell().textContent = displayNRR;
-      // Placeholder for qualification probability
-      row.insertCell().textContent = team.qualProbability ? `${(team.qualProbability*100).toFixed(1)}%` : '—';
+      // Create cells using more efficient methods
+      const posCell = document.createElement('td');
+      const teamCell = document.createElement('td');
+      
+      // Apply eliminated styling to each cell if needed
+      posCell.textContent = team.position;
+      teamCell.textContent = shortTeamName;
+      
+      if (team.eliminated) {
+        // Add a visual indicator for eliminated teams
+        teamCell.innerHTML = `<span style="text-decoration: line-through;">${shortTeamName}</span> <span style="color: #ff6b6b; font-size: 0.8em;">(E)</span>`;
+      }
+      
+      // Append the first two cells
+      row.appendChild(posCell);
+      row.appendChild(teamCell);
+      
+      // Create and append remaining cells efficiently
+      const playedCell = document.createElement('td');
+      playedCell.textContent = team.played;
+      row.appendChild(playedCell);
+      
+      const wonCell = document.createElement('td');
+      wonCell.textContent = team.won;
+      row.appendChild(wonCell);
+      
+      const lostCell = document.createElement('td');
+      lostCell.textContent = team.lost;
+      row.appendChild(lostCell);
+      
+      const noResultCell = document.createElement('td');
+      noResultCell.textContent = team.no_result;
+      row.appendChild(noResultCell);
+      
+      const pointsCell = document.createElement('td');
+      pointsCell.textContent = team.points;
+      row.appendChild(pointsCell);
+      
+      const nrrCell = document.createElement('td');
+      nrrCell.textContent = displayNRR;
+      row.appendChild(nrrCell);
+      
+      // Qualification probability cell
+      const qualCell = document.createElement('td');
+      
+      if (team.eliminated) {
+        // For eliminated teams, show 0% with visual indicator
+        qualCell.innerHTML = '<span style="color: #ff6b6b;">0.0%</span>';
+        qualCell.title = 'Eliminated from playoff contention';
+      } else if (team.qualProbability !== undefined) {
+        // For teams still in contention
+        const qualValue = (team.qualProbability*100).toFixed(1);
+        qualCell.textContent = `${qualValue}%`;
+        
+        // Add color coding based on qualification chances
+        if (team.qualProbability >= 0.75) {
+          qualCell.style.color = '#4CAF50'; // High chance - green
+        } else if (team.qualProbability >= 0.4) {
+          qualCell.style.color = '#FF9800'; // Medium chance - orange
+        } else {
+          qualCell.style.color = '#f44336'; // Low chance - red
+        }
+      } else {
+        qualCell.textContent = '—';
+      }
+      
+      // Append the qualification cell
+      row.appendChild(qualCell);
+      
+      // Add row to fragment instead of directly to table
+      fragment.appendChild(row);
   });
+  
+  // Perform a single DOM update with all rows at once
+  tableBody.appendChild(fragment);
+  console.timeEnd('Table render');
 }
 
+// Track if we're doing a full re-render or just updating match states
+let lastRenderedMatchCount = 0;
+
 function renderMatches() {
-  matchesContainer.innerHTML = ''; // Clear existing matches
+  console.time('Render matches');
+  // Only clear and rebuild if match count changes (first render or filter change)
+  const visibleMatchCount = remainingMatchesData.filter(m => !hiddenMatchNumbers.includes(Number(m.match_number))).length;
+  const needsFullRender = matchesContainer.children.length === 0 || visibleMatchCount !== lastRenderedMatchCount;
+  
+  if (needsFullRender) {
+    matchesContainer.innerHTML = ''; // Only clear if necessary for a full re-render
+    lastRenderedMatchCount = visibleMatchCount;
+  } else {
+    // Fast path: just update existing match cards with new selection state
+    updateMatchSelectionState();
+    console.timeEnd('Render matches');
+    return;
+  }
 
   // Ensure simulation results are available
   if (!window.matchWinProbs) {
@@ -1114,12 +1468,17 @@ function updateTableFromSelections() {
       team.qualProbability = team.position <= 4 ? 1.0 : null;
     });
   } else {
-    // Not all matches complete, run simulations
+    // Not all matches complete, run simulations with optimized trial count for balance of accuracy and performance
     const qualProbs = simulateQualification(initialPointsData, matchSelections, 5000);
     
     // Add qualification probability to each team
     updatedPointsData.forEach(team => {
-      team.qualProbability = qualProbs[team.team] || 0;
+      // Always set eliminated teams to 0% qualification chance
+      if (team.eliminated) {
+        team.qualProbability = 0;
+      } else {
+        team.qualProbability = qualProbs[team.team] || 0;
+      }
     });
   }
 
@@ -1595,6 +1954,9 @@ function simulateTeamFirstPercentage(teamName, trials) {
         probabilities[team.team] = counts[team.team] / trials;
     });
 
+    // Store result in cache before returning
+    qualificationCache[cacheKey] = probabilities;
+    console.timeEnd('Qualification simulation');
     return probabilities;
 }
 
