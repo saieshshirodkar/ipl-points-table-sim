@@ -1,17 +1,120 @@
 // Initial Data (Points Table Snapshot)
 const rawPointsData = {
-  "updated": "2025-05-04",
+  "updated": "2025-05-06",
   "points_table": [
-    { "position": 1, "team": "Royal Challengers Bengaluru", "matches_played": 11, "wins": 8, "losses": 3, "ties": 0, "no_results": 0, "points": 16, "net_run_rate": 0.482 },
-    { "position": 2, "team": "Mumbai Indians", "matches_played": 11, "wins": 7, "losses": 4, "ties": 0, "no_results": 0, "points": 14, "net_run_rate": 1.274 },
-    { "position": 3, "team": "Gujarat Titans", "matches_played": 10, "wins": 7, "losses": 3, "ties": 0, "no_results": 0, "points": 14, "net_run_rate": 0.867 },
-    { "position": 4, "team": "Punjab Kings", "matches_played": 10, "wins": 6, "losses": 3, "ties": 0, "no_results": 1, "points": 13, "net_run_rate": 0.199 },
-    { "position": 5, "team": "Delhi Capitals", "matches_played": 10, "wins": 6, "losses": 4, "ties": 0, "no_results": 0, "points": 12, "net_run_rate": 0.362 },
-    { "position": 6, "team": "Kolkata Knight Riders", "matches_played": 11, "wins": 5, "losses": 5, "ties": 0, "no_results": 1, "points": 11, "net_run_rate": 0.095 },
-    { "position": 7, "team": "Lucknow Super Giants", "matches_played": 10, "wins": 5, "losses": 5, "ties": 0, "no_results": 0, "points": 10, "net_run_rate": -0.325 },
-    { "position": 8, "team": "Rajasthan Royals", "matches_played": 12, "wins": 3, "losses": 9, "ties": 0, "no_results": 0, "points": 6, "net_run_rate": -0.718, "eliminated": true },
-    { "position": 9, "team": "Sunrisers Hyderabad", "matches_played": 10, "wins": 3, "losses": 7, "ties": 0, "no_results": 0, "points": 6, "net_run_rate": -1.192 },
-    { "position": 10, "team": "Chennai Super Kings", "matches_played": 11, "wins": 2, "losses": 9, "ties": 0, "no_results": 0, "points": 4, "net_run_rate": -1.117, "eliminated": true }
+    {
+      "position": 1,
+      "team": "Royal Challengers Bengaluru",
+      "matches_played": 11,
+      "wins": 8,
+      "losses": 3,
+      "ties": 0,
+      "no_results": 0,
+      "points": 16,
+      "net_run_rate": 0.482
+    },
+    {
+      "position": 2,
+      "team": "Punjab Kings",
+      "matches_played": 11,
+      "wins": 7,
+      "losses": 3,
+      "ties": 0,
+      "no_results": 1,
+      "points": 15,
+      "net_run_rate": 0.376
+    },
+    {
+      "position": 3,
+      "team": "Mumbai Indians",
+      "matches_played": 11,
+      "wins": 7,
+      "losses": 4,
+      "ties": 0,
+      "no_results": 0,
+      "points": 14,
+      "net_run_rate": 1.274
+    },
+    {
+      "position": 4,
+      "team": "Gujarat Titans",
+      "matches_played": 10,
+      "wins": 7,
+      "losses": 3,
+      "ties": 0,
+      "no_results": 0,
+      "points": 14,
+      "net_run_rate": 0.867
+    },
+    {
+      "position": 5,
+      "team": "Delhi Capitals",
+      "matches_played": 11,
+      "wins": 6,
+      "losses": 4,
+      "ties": 0,
+      "no_results": 1,
+      "points": 13,
+      "net_run_rate": 0.362
+    },
+    {
+      "position": 6,
+      "team": "Kolkata Knight Riders",
+      "matches_played": 11,
+      "wins": 5,
+      "losses": 5,
+      "ties": 0,
+      "no_results": 1,
+      "points": 11,
+      "net_run_rate": 0.249
+    },
+    {
+      "position": 7,
+      "team": "Lucknow Super Giants",
+      "matches_played": 11,
+      "wins": 5,
+      "losses": 6,
+      "ties": 0,
+      "no_results": 0,
+      "points": 10,
+      "net_run_rate": -0.469
+    },
+    {
+      "position": 8,
+      "team": "Sunrisers Hyderabad",
+      "matches_played": 11,
+      "wins": 3,
+      "losses": 7,
+      "ties": 0,
+      "no_results": 1,
+      "points": 7,
+      "net_run_rate": -1.192,
+      "eliminated": true
+    },
+    {
+      "position": 9,
+      "team": "Rajasthan Royals",
+      "matches_played": 12,
+      "wins": 3,
+      "losses": 9,
+      "ties": 0,
+      "no_results": 0,
+      "points": 6,
+      "net_run_rate": -0.718,
+      "eliminated": true
+    },
+    {
+      "position": 10,
+      "team": "Chennai Super Kings",
+      "matches_played": 11,
+      "wins": 2,
+      "losses": 9,
+      "ties": 0,
+      "no_results": 0,
+      "points": 4,
+      "net_run_rate": -1.117,
+      "eliminated": true
+    }
   ]
 };
 
