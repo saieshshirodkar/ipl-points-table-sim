@@ -1,3 +1,13 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
 
 /* Animation Keyframes */
@@ -32,11 +42,12 @@ body {
     background-color: #121212; /* Dark background */
     color: #ececec; /* Slightly lighter main text */
     margin: 0;
-    padding: 10px; /* Reduce padding slightly for mobile */
+    padding: 20px; /* Default padding, adjusted from 10px */
     display: flex;
     flex-direction: column;
     align-items: center;
     position: relative; /* Needed for absolute positioning of children */
+    line-height: 1.6; /* Added for better readability */
 
     /* Disable text selection */
     -webkit-user-select: none; /* Safari */
@@ -104,7 +115,7 @@ h2 {
 #pointsTable {
   border-collapse: collapse;
   background-color: #1e1e1e;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3), 0 0 15px rgba(0,0,0,0.1); /* Updated shadow */
   border-radius: 8px;
   overflow: hidden;
   border-radius: 10px;
@@ -233,14 +244,20 @@ tr[data-playoff="true"] td:last-child {
 
 /* Mobile table adjustments */
 @media (max-width: 600px) {
-  html, body {
-    overflow-x: hidden !important;
+  body { /* Added to adjust padding on mobile */
+    padding: 10px;
   }
   .table-container {
     margin: 10px 0;
     width: 100%;
-    overflow-x: hidden !important;
+    overflow-x: auto; /* Allows table to scroll horizontally if wider than screen */
     box-sizing: border-box;
+
+    /* Sticky behavior for mobile */
+    position: sticky;
+    top: 0;
+    z-index: 100; /* Ensures it stays above scrolling content */
+    background-color: #1e1e1e; /* Match table background to prevent show-through */
   }
   /* Matches container single column on mobile */
   .matches-container {
@@ -257,6 +274,10 @@ tr[data-playoff="true"] td:last-child {
   #pointsTable td:nth-child(2),
   #pointsTable th:nth-child(2) {
     text-align: left;
+  }
+  h1 { /* Added to adjust H1 font size on mobile */
+    font-size: 2em;
+    margin-bottom: 20px; /* Optionally adjust margin */
   }
 }
 
@@ -275,7 +296,7 @@ tr[data-playoff="true"] td:last-child {
 .match-card {
     background-color: #1f1f1f; /* Slightly different from main dark */
     border-radius: 10px; /* Increased radius */
-    box-shadow: 0 3px 7px rgba(0, 0, 0, 0.4); /* Adjusted shadow */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.25), 0 0 10px rgba(0,0,0,0.1); /* Updated shadow */
     padding: 18px; /* Increased padding */
     display: flex;
     flex-direction: column;
@@ -292,7 +313,7 @@ tr[data-playoff="true"] td:last-child {
 /* Match Card Hover effect */
 .match-card:hover {
     transform: translateY(-3px); /* Slightly more lift */
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.55); /* More pronounced shadow on hover */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 15px rgba(0,0,0,0.15); /* Updated shadow */
 }
 
 .match-info {
