@@ -82,7 +82,7 @@ h2 {
 /* Table Container for responsive layout */
 .table-container {
   max-width: 1000px;
-  margin: 20px auto;
+  margin: 20px auto 40px auto; /* Increased bottom margin */
   overflow-x: auto;
 }
 
@@ -262,8 +262,8 @@ tr[data-playoff="true"] td:last-child {
 
 .matches-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* Slightly wider minmax */
+    gap: 20px; /* Increased gap */
     padding: 20px;
     max-width: 1000px;
     margin: 8px auto 0; /* Keep existing margin */
@@ -273,24 +273,26 @@ tr[data-playoff="true"] td:last-child {
 }
 
 .match-card {
-    background-color: #252525; /* Slightly different dark shade */
-    padding: 15px 20px; /* Slightly more horizontal padding */
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    border: 1px solid #484848; /* Lighter border */
+    background-color: #1f1f1f; /* Slightly different from main dark */
+    border-radius: 10px; /* Increased radius */
+    box-shadow: 0 3px 7px rgba(0, 0, 0, 0.4); /* Adjusted shadow */
+    padding: 18px; /* Increased padding */
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    border: 1px solid #2d2d2d; /* Added border */
     /* Add fade-in animation */
     opacity: 0; /* Start hidden */
     animation: fadeInSlideUp 0.6s ease-out forwards;
     /* Stagger based on order could be added via JS */
     animation-delay: 0.2s; /* Slightly later delay */
-    transition: box-shadow 0.2s ease-out, transform 0.2s ease-out; /* Add transition here */
 }
 
 /* Match Card Hover effect */
 .match-card:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); /* Slightly stronger shadow on hover */
-    transform: translateY(-2px); /* Subtle lift */
-    /* Removed transition from here, added to base style */
+    transform: translateY(-3px); /* Slightly more lift */
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.55); /* More pronounced shadow on hover */
 }
 
 .match-info {
@@ -366,6 +368,13 @@ tr[data-playoff="true"] td:last-child {
 .match-card.no-result-selected .match-options-icon {
      color: #ffffff; /* Make icon brighter when selected */
      background-color: rgba(255, 255, 255, 0.1); /* Add background */
+}
+
+.match-card.no-result-selected .team-button {
+    opacity: 0.5;
+    pointer-events: none;
+    background-color: #2a2a2a; /* Match card background */
+    border-color: #444; /* Dimmer border */
 }
 
 /* Removed the default blue background for selected buttons */
@@ -478,15 +487,14 @@ tr[data-playoff="true"] td:last-child {
 
 /* Footer Styles */
 footer {
-    width: 100%;
-    max-width: 1000px;
-    margin-top: 50px; /* Increased top margin */
-    padding: 25px 0; /* Increased padding */
-    border-top: 1px solid #383838;
     text-align: center;
+    padding: 25px 10px; /* Increased padding */
+    margin-top: 50px; /* Increased top margin */
+    color: #aaa;
     font-size: 0.85em;
-    color: #bdbdbd;
-    line-height: 1.6;
+    border-top: 1px solid #333; /* Subtle top border */
+    width: 100%;
+    box-sizing: border-box;
 }
 
 footer p {
@@ -562,7 +570,7 @@ footer a:hover {
 
 .icon-button:hover {
     color: #ffffff;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: #383838; /* Darker hover for icon buttons */
 }
 
 .icon-button:active {
@@ -775,240 +783,15 @@ tr.selected-row {
 
 /* Match Card Filtering */
 .match-card.hidden {
-    display: none; /* Hide the card completely */
+    display: none;
 }
 
-/* --- Simulation Section Styles --- */
-
-/* Team Sim Section Dropdown and Button Styling */
-#teamSimSection select {
-    padding: 8px 10px;
-    background-color: #181818;
-    border: 1px solid #333;
-    color: #ececec;
-    border-radius: 4px;
-    font-size: 1em;
-    width: 100%;
-    box-sizing: border-box;
-    font-family: 'Poppins', sans-serif;
-    cursor: pointer;
-    margin-bottom: 10px;
-    appearance: none;
-    box-shadow: none;
-    transition: border-color 0.2s;
-}
-#teamSimSection select:hover, #teamSimSection select:focus {
-    background-color: #232323;
-    border-color: #555;
-    outline: none;
-    box-shadow: none;
+tr.eliminated td {
+    text-decoration: line-through;
+    text-decoration-color: rgba(255, 0, 0, 0.7); /* Optional: make strikethrough red */
 }
 
-#teamSimSection {
-    margin: 32px auto 1px auto;
-    max-width: 400px;
-    padding: 28px 24px 10px 24px;
-    background: #181818;
-    border-radius: 10px;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.18);
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0;
-}
-#teamSimSection label {
-    margin-bottom: 14px;
-    font-size: 1.07em;
-    color: #ececec;
-    font-weight: 400;
-}
-#teamSimSection select {
-    margin-bottom: 18px;
-}
-#teamSimSection .sim-btn-row {
-    display: flex;
-    gap: 12px;
-    margin-top: 0;
-    margin-bottom: 18px;
-}
-#simResult.sim-result {
-    margin-top: 0;
-    margin-bottom: 0;
-}
-#matchesContainer {
-    margin-top: 4px;
-    margin-bottom: 14px;
-}
-
-#teamSimSection .sim-btn-row button {
-    margin-top: 0;
-    flex: 1 1 0;
-    min-width: 0;
-    padding: 12px 20px;
-    background: #111;
-    color: #fff;
-    border: 1px solid #222;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1.05em;
-    font-weight: 500;
-    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
-    box-shadow: none;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-#teamSimSection .sim-btn-row button:hover {
-    background: #222;
-    border-color: #444;
-}
-#teamSimSection .sim-btn-row button:active {
-    background: #000;
-}
-#teamSimSection .sim-btn-row button:disabled {
-    background: #333;
-    color: #888;
-    cursor: not-allowed;
-    opacity: 0.6;
-    box-shadow: none;
-    border-color: #222;
-}
-/* Remove special styling for #qualifySimBtn */
-#runSimBtn, #qualifySimBtn {
-    width: 100%;
-    min-width: 0;
-    font-size: 1.05em;
-    font-weight: 500;
-    background: #111;
-    color: #fff;
-    border: 1px solid #222;
-    border-radius: 5px;
-    box-shadow: none;
-}
-
-#teamSimSection button:hover {
-    background: #222;
-    border-color: #444;
-}
-#teamSimSection button:active {
-    transform: scale(0.98);
-    background: #000;
-}
-#teamSimSection button:disabled {
-    background: #333;
-    color: #888;
-    cursor: not-allowed;
-    opacity: 0.6;
-    box-shadow: none;
-    border-color: #222;
-}
-
-#simulationContainer {
-    background-color: #252525; /* Slightly lighter background */
-    padding: 25px 30px; /* Increased padding */
-    border-radius: 10px; /* Slightly larger radius */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); /* Enhanced shadow */
-    margin-top: 40px; /* Increased space above */
-    max-width: 550px; /* Slightly narrower */
-    width: 90%;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch; /* Stretch items to fill width */
-    gap: 20px; /* Increased gap */
-    border: 1px solid #484848; /* Add subtle border */
-}
-
-#simulationContainer label {
-    font-size: 0.95em; /* Slightly smaller label */
-    color: #bdbdbd; /* Lighter grey */
-    margin-bottom: 3px; /* Reduced space below label */
-    font-weight: 400; /* Normal weight */
-    text-align: left; /* Align label left */
-}
-
-#simulationContainer select {
-    padding: 12px 15px; /* More padding */
-    background-color: #333333; /* Match team buttons */
-    border: 1px solid #555555; /* Match team buttons */
-    color: #ececec;
-    border-radius: 5px;
-    font-size: 1em;
-    width: 100%;
-    box-sizing: border-box;
-    font-family: 'Poppins', sans-serif;
-    cursor: pointer;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-}
-
-#simulationContainer select:hover {
-    background-color: #444444;
-    border-color: #777777;
-}
-
-#simulationContainer select:focus {
-    outline: none;
-    border-color: #4db6ac;
-    box-shadow: 0 0 0 3px rgba(77, 182, 172, 0.4); /* Slightly larger glow */
-}
-
-#simulationContainer button {
-    padding: 12px 20px; /* More padding */
-    background: linear-gradient(90deg, #4db6ac, #26a69a);
-    color: #ffffff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1.05em; /* Slightly larger font */
-    font-weight: 500;
-    transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
-    width: 100%;
-    box-sizing: border-box;
-    margin-top: 5px; /* Add slight margin above button */
-}
-
-#simulationContainer button:hover {
-    background: linear-gradient(90deg, #5dc1b6, #33b1a3);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-}
-
-#simulationContainer button:active {
-    transform: scale(0.98);
-    background: linear-gradient(90deg, #26a69a, #00897b);
-}
-
-#simulationContainer button:disabled {
-    background: #555;
-    cursor: not-allowed;
-    opacity: 0.6;
-    box-shadow: none;
-}
-
-.sim-result {
-    margin-top: 5px; /* Reduced space above result */
-    font-size: 1em; /* Slightly larger result text */
-    color: #ececec; /* Brighter result text */
-    text-align: center;
-    min-height: 24px; /* Slightly increased height */
-    width: 100%;
-    background-color: rgba(255, 255, 255, 0.05); /* Subtle background */
-    padding: 8px 0; /* Add padding */
-    border-radius: 4px; /* Rounded corners */
-    transition: background-color 0.3s ease;
-}
-.sim-result:empty {
-    background: transparent !important;
-    padding: 0 !important;
-    min-height: 0 !important;
-}
-
-
-.sim-result b {
-    color: #4db6ac; /* Use accent color for bold */
-    font-weight: 600;
-}
-
-/* Responsive adjustments for simulation container */
+/* The following @media rule was originally after the #simulationContainer styles */
 @media (max-width: 600px) {
     #simulationContainer {
         width: 95%;
@@ -1055,10 +838,10 @@ tr.selected-row {
     background-color: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: #f0f0f0;
-    padding: 8px 12px;
+    padding: 8px 16px; /* Adjusted padding */
     border-radius: 6px;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.95em; /* Adjusted font size */
     font-weight: 500;
     display: inline-flex;
     align-items: center;
