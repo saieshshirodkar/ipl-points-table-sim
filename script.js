@@ -125,16 +125,23 @@ const rawPointsData = {
   }
   
   function closeAllDropdowns(excludeDropdown = null) {
-      document.querySelectorAll('.match-options-dropdown.visible, .score-inputs.visible').forEach(el => {
-          const isScoreInput = el.classList.contains('score-inputs');
-          const isOptionDropdown = el.classList.contains('match-options-dropdown');
-  
-          if (isOptionDropdown && el !== excludeDropdown) {
+      // First, close all dropdown menus except the excluded one
+      document.querySelectorAll('.match-options-dropdown.visible').forEach(el => {
+          if (el !== excludeDropdown) {
               el.classList.remove('visible');
           }
-          if (isScoreInput && el !== excludeDropdown?.closest('.match-card')?.querySelector('.score-inputs')) {
+      });
+      
+      // Next, close all score inputs except those related to the excluded dropdown
+      document.querySelectorAll('.score-inputs.visible').forEach(el => {
+          // Skip if this is part of the excluded dropdown's card
+          const parentCard = el.closest('.match-card');
+          const isExcluded = excludeDropdown && parentCard && parentCard.contains(excludeDropdown);
+          
+          if (!isExcluded) {
               el.classList.remove('visible');
-              el.closest('.match-card')?.querySelector('.score-toggle-icon')?.classList.remove('icon-rotated');
+              const toggleIcon = parentCard?.querySelector('.score-toggle-icon');
+              if (toggleIcon) toggleIcon.classList.remove('icon-rotated');
           }
       });
   }
@@ -316,16 +323,20 @@ const rawPointsData = {
       }
 
       const mathematicallyEliminatedTeams = new Set();
-      tempDeterministicData.forEach(team => { // Use the updated tempDeterministicData
-          // team.points and team.played are now reflective of currentSelections
-          const maxPossiblePoints = team.points + ((14 - team.played) * 2);
-          if (team.eliminated || (maxPossiblePoints < potentialCutoffPoints && team.played <= 14)) {
-             // Also ensure team hasn't already played all games if using cutoff
-             if (team.played >= 14 && team.points < potentialCutoffPoints) {
-                mathematicallyEliminatedTeams.add(team.team);
-             } else if (maxPossiblePoints < potentialCutoffPoints) {
-                mathematicallyEliminatedTeams.add(team.team);
-             }
+      tempDeterministicData.forEach(team => {
+          // Calculate remaining matches for this team
+          const remainingMatches = 14 - team.played;
+          // Maximum possible points = current points + (2 points per win * remaining matches)
+          const maxPossiblePoints = team.points + (remainingMatches * 2);
+          
+          // A team is eliminated if:
+          // 1. It's marked as eliminated in the initial data, OR
+          // 2. It has played all 14 matches and has fewer points than the current 4th place cutoff, OR
+          // 3. Even winning all remaining matches would not reach the current 4th place cutoff
+          if (team.eliminated || 
+              (team.played >= 14 && team.points < potentialCutoffPoints) || 
+              (maxPossiblePoints < potentialCutoffPoints)) {
+              mathematicallyEliminatedTeams.add(team.team);
           }
       });
 
@@ -509,7 +520,10 @@ const rawPointsData = {
           const team2Data = updatedPointsData.find(t => t.team === team2FullName);
           if (!team1Data || !team2Data) return;
   
+          // Check if either team has already played 14 matches (maximum allowed)
           let t1IncrementPlayed = team1Data.played < 14, t2IncrementPlayed = team2Data.played < 14;
+          
+          // Skip incrementing if team has already reached 14 matches
           if (t1IncrementPlayed) team1Data.played++;
           if (t2IncrementPlayed) team2Data.played++;
   
@@ -540,13 +554,13 @@ const rawPointsData = {
       });
   
       updatedPointsData.forEach(team => {
-          const totalRunsFor = Number(team.runsFor) || 0, totalOversFaced = Number(team.oversFacedDecimal) || 0;
-          const totalRunsAgainst = Number(team.runsAgainst) || 0, totalOversBowled = Number(team.oversBowledDecimal) || 0;
+          const totalRunsFor = Number(team.runsFor) || 0, totalOversFaced = Number(team.oversFacedDecimal) || 0.001;
+          const totalRunsAgainst = Number(team.runsAgainst) || 0, totalOversBowled = Number(team.oversBowledDecimal) || 0.001;
           const runRateFor = totalOversFaced > 0 ? totalRunsFor / totalOversFaced : 0;
           const runRateAgainst = totalOversBowled > 0 ? totalRunsAgainst / totalOversBowled : 0;
           team.net_run_rate = Math.round((runRateFor - runRateAgainst) * 1000) / 1000;
-          if (isNaN(team.net_run_rate)) {
-              console.warn(`NRR NaN for ${team.team}. Falling back to original NRR (${team.original_nrr || 0}).`);
+          if (isNaN(team.net_run_rate) || !isFinite(team.net_run_rate)) {
+              console.warn(`NRR calculation error for ${team.team}. Falling back to original NRR (${team.original_nrr || 0}).`);
               team.net_run_rate = team.original_nrr ?? 0;
           }
       });
@@ -698,7 +712,10 @@ const rawPointsData = {
       }
   
       console.log("Performing full render of match cards.");
+      
+      // Clear the container instead of replacing it to avoid reference issues
       matchesContainer.innerHTML = '';
+      
       const fragment = document.createDocumentFragment();
   
       visibleMatches.forEach(match => {
@@ -774,18 +791,42 @@ const rawPointsData = {
                   const currentMatchNumber = match.match_number;
                   if (!matchSelections[currentMatchNumber]) matchSelections[currentMatchNumber] = { winner: null, scores: { team1: {}, team2: {} } };
                   const scores = matchSelections[currentMatchNumber].scores;
-                  scores.team1.r = t1RunsInput.value.trim() === '' ? null : parseInt(t1RunsInput.value, 10);
+                  
+                  // Validate and parse runs inputs
+                  const t1RunsValue = t1RunsInput.value.trim();
+                  const t2RunsValue = t2RunsInput.value.trim();
+                  scores.team1.r = t1RunsValue === '' ? null : 
+                                   (isNaN(parseInt(t1RunsValue, 10)) ? null : Math.max(0, parseInt(t1RunsValue, 10)));
+                  scores.team2.r = t2RunsValue === '' ? null : 
+                                   (isNaN(parseInt(t2RunsValue, 10)) ? null : Math.max(0, parseInt(t2RunsValue, 10)));
+                  
+                  // Set the input value to valid number or empty string
+                  if (t1RunsValue !== '' && (isNaN(parseInt(t1RunsValue, 10)) || parseInt(t1RunsValue, 10) < 0)) {
+                      t1RunsInput.value = '';
+                      scores.team1.r = null;
+                  }
+                  if (t2RunsValue !== '' && (isNaN(parseInt(t2RunsValue, 10)) || parseInt(t2RunsValue, 10) < 0)) {
+                      t2RunsInput.value = '';
+                      scores.team2.r = null;
+                  }
+                  
                   scores.team1.oStr = t1OversInput.value;
-                  scores.team2.r = t2RunsInput.value.trim() === '' ? null : parseInt(t2RunsInput.value, 10);
                   scores.team2.oStr = t2OversInput.value;
-  
+
                   const { decimal: o1Dec, valid: o1Valid } = parseOversToDecimal(t1OversInput.value);
                   const { decimal: o2Dec, valid: o2Valid } = parseOversToDecimal(t2OversInput.value);
                   scores.team1.oDec = o1Valid ? o1Dec : null;
                   scores.team2.oDec = o2Valid ? o2Dec : null;
-  
+
+                  // Validate overs inputs
                   [t1OversInput, t2OversInput].forEach(ovIn => ovIn.setCustomValidity((parseOversToDecimal(ovIn.value).valid || ovIn.value.trim() === '') ? '' : 'Invalid format (e.g., 20 or 19.5)'));
-                  [t1OversInput, t2OversInput].forEach(ovIn => ovIn.reportValidity());
+                  
+                  // Validate runs inputs
+                  [t1RunsInput, t2RunsInput].forEach(runIn => runIn.setCustomValidity(
+                      runIn.value.trim() === '' || (!isNaN(parseInt(runIn.value, 10)) && parseInt(runIn.value, 10) >= 0) ? '' : 'Please enter a valid non-negative number'
+                  ));
+                  
+                  [t1OversInput, t2OversInput, t1RunsInput, t2RunsInput].forEach(inp => inp.reportValidity());
                   
                   saveSelections(); // Save immediately
                   debouncedUpdateTable(); // Update table debounced
@@ -831,17 +872,24 @@ const rawPointsData = {
               dropdownMenu.classList.toggle('visible');
           });
   
-          scoreToggleIcon.addEventListener('click', () => {
-              closeAllDropdowns();
-              const isOpening = !scoreInputsDiv.classList.contains('visible');
-              if (isOpening) {
-                  document.querySelectorAll('.score-inputs.visible').forEach(div => {
-                      if (div !== scoreInputsDiv) {
-                          div.classList.remove('visible');
-                          div.closest('.match-card')?.querySelector('.score-toggle-icon')?.classList.remove('icon-rotated');
-                      }
-                  });
-              }
+          scoreToggleIcon.addEventListener('click', (event) => {
+              event.preventDefault(); // Prevent any default behavior
+              event.stopPropagation(); // Prevent event from bubbling up
+              
+              // Handle other dropdowns but NOT score inputs
+              document.querySelectorAll('.match-options-dropdown.visible').forEach(el => {
+                  el.classList.remove('visible');
+              });
+              
+              // Handle other score inputs - close them if they're not this one
+              document.querySelectorAll('.score-inputs.visible').forEach(otherInputDiv => {
+                  if (otherInputDiv !== scoreInputsDiv) {
+                      otherInputDiv.classList.remove('visible');
+                      otherInputDiv.closest('.match-card')?.querySelector('.score-toggle-icon')?.classList.remove('icon-rotated');
+                  }
+              });
+              
+              // Toggle this specific score input
               scoreInputsDiv.classList.toggle('visible');
               scoreToggleIcon.classList.toggle('icon-rotated');
           });
@@ -869,12 +917,17 @@ const rawPointsData = {
       if (resetButton) resetButton.addEventListener('click', handleResetClick);
       else console.error("Reset button not found!");
   
-      tableBody.addEventListener('click', (event) => {
-          const clickedRow = event.target.closest('tr');
-          if (!clickedRow?.dataset.team) return;
-          selectedFilterTeam = (selectedFilterTeam === clickedRow.dataset.team) ? null : clickedRow.dataset.team;
-          applyMatchFilter();
-      });
+      // Add click handler to tableBody without replacing it
+      if (tableBody) {
+          tableBody.addEventListener('click', (event) => {
+              const clickedRow = event.target.closest('tr');
+              if (!clickedRow?.dataset.team) return;
+              selectedFilterTeam = (selectedFilterTeam === clickedRow.dataset.team) ? null : clickedRow.dataset.team;
+              applyMatchFilter();
+          });
+      } else {
+          console.error("Table body not found!");
+      }
   
       if (randomizeBtn) randomizeBtn.addEventListener('click', handleRandomizeClick);
       else console.warn("Randomize button not found!");
@@ -885,15 +938,25 @@ const rawPointsData = {
           mainHeading.addEventListener('click', () => location.reload());
       } else console.error("Main heading (h1) not found!");
   
+      // Use event delegation on document.body to handle clicks on dynamic elements
       document.body.addEventListener('click', (event) => {
-          if (!event.target.closest('.match-options-icon, .match-options-dropdown, .score-toggle-icon, .score-inputs, .team-button, button')) {
-              closeAllDropdowns();
+          const clickedOnScoreToggle = event.target.closest('.score-toggle-icon');
+          const clickedInsideScoreInputs = event.target.closest('.score-inputs');
+          
+          // If clicked outside score toggle and score inputs, close all dropdowns and score inputs
+          if (!clickedOnScoreToggle && !clickedInsideScoreInputs) {
+              // Close dropdowns
+              document.querySelectorAll('.match-options-dropdown.visible').forEach(el => {
+                  el.classList.remove('visible');
+              });
+              
+              // Close score inputs
+              document.querySelectorAll('.score-inputs.visible').forEach(el => {
+                  el.classList.remove('visible');
+                  el.closest('.match-card')?.querySelector('.score-toggle-icon')?.classList.remove('icon-rotated');
+              });
           }
       });
-  
-      // if (teamSelect && qualifySimBtn && simResultDiv) {
-      //     qualifySimBtn.addEventListener('click', handleQualifySimulationClick);
-      // } else console.warn("Team simulation elements (select, button, result div) not all found.");
   }
   
   // --- Event Handler Functions ---
@@ -908,6 +971,9 @@ const rawPointsData = {
           }, 200);
       }
   
+      // Clear the previous filter state
+      const previousFilterState = selectedFilterTeam;
+      
       matchSelections = {}; selectedFilterTeam = null; qualificationCache = {};
       lastTableData = null; lastRenderedMatchCount = -1;
       localStorage.removeItem(LOCAL_STORAGE_KEY);
@@ -918,6 +984,23 @@ const rawPointsData = {
           try {
               renderMatches();
               updateTableFromSelections();
+              
+              // Explicitly clear UI filter state if there was a previous filter
+              if (previousFilterState) {
+                  // Clear any selected row styling
+                  tableBody.querySelectorAll('tr.selected-row').forEach(row => {
+                      row.classList.remove('selected-row');
+                  });
+                  
+                  // Clear any filter styles on the body
+                  document.body.classList.remove('filter-active');
+                  
+                  // Force all match cards to be visible
+                  matchesContainer.querySelectorAll('.match-card.hidden').forEach(card => {
+                      card.classList.remove('hidden');
+                  });
+              }
+              
               applyMatchFilter();
               closeAllDropdowns();
               console.log("Simulation reset complete.");
@@ -989,10 +1072,23 @@ const rawPointsData = {
           const t1DataForUpdate = tempPointsData.find(t => t.team === t1Name);
           const t2DataForUpdate = tempPointsData.find(t => t.team === t2Name);
           if (t1DataForUpdate && t2DataForUpdate) {
-              t1DataForUpdate.played++; t2DataForUpdate.played++;
-              if (result.winner === 'NO_RESULT') { t1DataForUpdate.points++; t1DataForUpdate.no_result++; t2DataForUpdate.points++; t2DataForUpdate.no_result++; }
-              else if (result.winner === t1Name) { t1DataForUpdate.points += 2; t1DataForUpdate.won++; t2DataForUpdate.lost++; }
-              else if (result.winner === t2Name) { t2DataForUpdate.points += 2; t2DataForUpdate.won++; t1DataForUpdate.lost++; }
+              // Respect the 14-match limit for each team
+              const t1CanPlay = t1DataForUpdate.played < 14;
+              const t2CanPlay = t2DataForUpdate.played < 14;
+              
+              if (t1CanPlay) t1DataForUpdate.played++;
+              if (t2CanPlay) t2DataForUpdate.played++;
+              
+              if (result.winner === 'NO_RESULT') {
+                  if (t1CanPlay) { t1DataForUpdate.no_result++; t1DataForUpdate.points++; }
+                  if (t2CanPlay) { t2DataForUpdate.no_result++; t2DataForUpdate.points++; }
+              } else if (result.winner === t1Name) {
+                  if (t1CanPlay) { t1DataForUpdate.won++; t1DataForUpdate.points += 2; }
+                  if (t2CanPlay) t2DataForUpdate.lost++;
+              } else if (result.winner === t2Name) {
+                  if (t2CanPlay) { t2DataForUpdate.won++; t2DataForUpdate.points += 2; }
+                  if (t1CanPlay) t1DataForUpdate.lost++;
+              }
           }
       });
   
@@ -1049,39 +1145,73 @@ const rawPointsData = {
   }
   
   // --- Initial Setup ---
+  // Format date as "DD-MM-YYYY"
+  function formatDateForDisplay() {
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = now.getFullYear(); 
+      // Use just last 2 digits of year for display to match existing format "DD-MM-YY"
+      const shortYear = year.toString().slice(-2);
+      return `${day}-${month}-${shortYear}`;
+  }
+
+  // Update the Last updated date in the DOM
+  function updateLastUpdatedDate() {
+      const formattedDate = formatDateForDisplay();
+      
+      // Update the date in the DOM
+      const lastUpdatedElement = document.querySelector('.last-updated');
+      if (lastUpdatedElement) {
+          lastUpdatedElement.textContent = `Last updated: ${formattedDate}`;
+      }
+  }
+
   async function initializeApp() {
-      console.log("Initializing IPL Points Table Simulator...");
-      const essentialElements = { tableBody, matchesContainer, resetButton, mainHeading };
-      if (Object.values(essentialElements).some(el => !el)) {
-          const missing = Object.entries(essentialElements).filter(([_, el]) => !el).map(([name]) => name).join(', ');
-          console.error(`Initialization Error: Essential DOM elements not found: ${missing}`);
-          if(matchesContainer) matchesContainer.innerHTML = '<p style="color: red; text-align: center;">Error: Page elements missing. Cannot load simulator.</p>';
-          return;
-      }
-      console.log("Essential DOM elements found.");
-  
-      tableBody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Loading data...</td></tr>';
-      matchesContainer.innerHTML = '<p style="text-align: center;">Loading matches...</p>';
-  
-      loadSelections();
-      await loadRemainingMatches();
-      await loadHiddenMatches();
-  
-      if (remainingMatchesData.length === 0 && staticRemainingMatchesData.length === 0) {
-          console.error("Initialization Error: No match data available.");
-          tableBody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: red;">Error: Could not load match data.</td></tr>';
-          matchesContainer.innerHTML = '<p style="color: red; text-align: center;">Error loading match data.</p>';
-          return;
-      }
-      console.log(`Using ${remainingMatchesData.length} matches for simulation.`);
-  
+      console.log('Initializing app...');
+      
+      // Update the last updated date
+      updateLastUpdatedDate();
+      
       estimateInitialStats(initialPointsData);
-      runWinProbabilitySimulations();
-      setupEventListeners();
-      renderMatches();
-      updateTableFromSelections();
-      applyMatchFilter();
-      console.log("IPL Points Table Simulator Initialized Successfully.");
+      loadSelections();
+      
+      try {
+          // Load data with proper sequencing to avoid race conditions
+          await Promise.all([
+              loadRemainingMatches(),
+              loadHiddenMatches()
+          ]);
+          
+          // Only proceed after data is loaded
+          console.log('Data loaded successfully. Rendering app...');
+          runWinProbabilitySimulations();
+          updateTableFromSelections();
+          renderMatches();
+          setupEventListeners();
+          
+          // Check URL params after everything is set up
+          const params = new URLSearchParams(window.location.search);
+          if (params.has('random')) {
+              handleRandomizeClick();
+          }
+      } catch (error) {
+          console.error('Error during initialization:', error);
+          // Display error message to user
+          document.getElementById('matchesContainer').innerHTML = 
+              '<div class="error-message">Error loading match data. Please try refreshing the page.</div>';
+      }
   }
   
-  document.addEventListener('DOMContentLoaded', initializeApp);
+  // Add a simple way to display loading state
+  document.addEventListener('DOMContentLoaded', () => {
+      // Update the last updated date immediately when the DOM is loaded
+      updateLastUpdatedDate();
+      
+      document.getElementById('matchesContainer').innerHTML = '<div class="loading">Loading matches data...</div>';
+      initializeApp().catch(err => {
+          console.error('Initialization failed:', err);
+          document.getElementById('matchesContainer').innerHTML = 
+              '<div class="error-message">Failed to initialize the application. Please refresh the page.</div>';
+      });
+  });
