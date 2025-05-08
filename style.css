@@ -101,7 +101,7 @@ h2 {
   width: 100%;
   table-layout: fixed;
 }
-#pointsTable th:nth-child(1), #pointsTable td:nth-child(1) { width: 6%; }
+#pointsTable th:nth-child(1), #pointsTable td:nth-child(1) { width: 7%; }
 #pointsTable th:nth-child(2), #pointsTable td:nth-child(2) { width: 25%; text-align: left; padding-left: 10px; }
 #pointsTable th:nth-child(3), #pointsTable td:nth-child(3),
 #pointsTable th:nth-child(4), #pointsTable td:nth-child(4),
@@ -116,9 +116,7 @@ h2 {
   border-collapse: collapse;
   background-color: #1e1e1e;
   box-shadow: 0 2px 5px rgba(0,0,0,0.3), 0 0 15px rgba(0,0,0,0.1); /* Updated shadow */
-  border-radius: 8px;
-  overflow: hidden;
-  border-radius: 10px;
+  border-radius: 10px; /* Fixed duplicate by using only one value */
   overflow: hidden;
 }
 
@@ -128,9 +126,14 @@ h2 {
   position: sticky;
   top: 0;
   z-index: 2;
-  padding: 12px 8px;
+  padding: 12px 10px;
   cursor: pointer;
   transition: background 0.2s ease;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.9em;
+  border-bottom: 2px solid #444;
 }
 
 #pointsTable th:hover {
@@ -158,17 +161,13 @@ h2 {
   background-color: rgba(255, 255, 255, 0.05);
 }
 
-#pointsTable tbody tr:hover td {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
 #pointsTable tbody tr {
   transition: transform 0.2s ease, background 0.2s ease;
 }
 
 #pointsTable tbody tr:hover {
-  transform: translateY(-2px);
   background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
 }
 
 /* Special styling for top 4 teams */
@@ -179,12 +178,6 @@ tr[data-playoff="true"] td {
 /* Create a subtle divider after position 4 */
 tr:nth-child(4) td {
   border-bottom: 2px solid rgba(255, 255, 255, 0.15);
-}
-
-/* Add hover effect to rows */
-#pointsTable tbody tr:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  transform: translateX(2px);
 }
 
 /* Make qualification percentage more prominent for top teams */
@@ -259,6 +252,11 @@ tr[data-playoff="true"] td:last-child {
     z-index: 100; /* Ensures it stays above scrolling content */
     background-color: #1e1e1e; /* Match table background to prevent show-through */
   }
+  
+  /* Ensure table headers stay above everything when sticky */
+  #pointsTable th {
+    z-index: 101; /* Higher than the container to ensure headers stay on top */
+  }
   /* Matches container single column on mobile */
   .matches-container {
     grid-template-columns: 1fr !important;
@@ -303,11 +301,11 @@ tr[data-playoff="true"] td:last-child {
     position: relative;
     transition: transform 0.25s ease, box-shadow 0.25s ease;
     border: 1px solid #2d2d2d; /* Added border */
-    /* Add fade-in animation */
-    opacity: 0; /* Start hidden */
-    animation: fadeInSlideUp 0.6s ease-out forwards;
-    /* Stagger based on order could be added via JS */
-    animation-delay: 0.2s; /* Slightly later delay */
+    /* Fix animation issue - ensure cards always show */
+    opacity: 1; /* Start visible instead of hidden */
+    animation: fadeInSlideUp 0.6s ease-out;
+    /* Remove animation delay that could prevent cards from showing */
+    /* animation-delay: 0.2s; */
 }
 
 /* Match Card Hover effect */
@@ -358,6 +356,11 @@ tr[data-playoff="true"] td:last-child {
     transform: scale(0.95); /* More noticeable press effect */
     background-color: #555555; /* Darker background when pressed */
     border-color: #888888; /* Lighter border when pressed */
+}
+
+.team-button:focus-visible {
+    outline: 2px solid #4db6ac;
+    outline-offset: 2px;
 }
 
 /* No Result button styling */
@@ -438,38 +441,37 @@ tr[data-playoff="true"] td:last-child {
 }
 
 .score-inputs {
-    /* display: none; Removed, control via max-height */
-    max-height: 0; /* Initially hidden */
-    overflow: hidden; /* Hide content that overflows */
-    margin-top: 0; /* Remove top margin when hidden */
-    border-top: 1px solid transparent; /* Keep space but make border transparent */
-    padding-top: 0; /* Remove top padding when hidden */
-    padding-bottom: 0; /* Add bottom padding control */
-    display: grid; /* Changed from previous */
+    /* Use a clean approach with display and visibility instead of max-height */
+    height: auto;
+    overflow: hidden;
+    visibility: hidden;
+    opacity: 0;
+    max-height: 0;
+    margin: 0;
+    border-top: 1px solid transparent;
+    padding: 0;
+    display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px 15px;
     align-items: center;
-    transition: max-height 0.4s ease-in-out,
-                margin-top 0.4s ease-in-out,
-                padding-top 0.4s ease-in-out,
-                padding-bottom 0.4s ease-in-out,
-                border-color 0.4s ease-in-out,
-                opacity 0.4s ease-in-out; /* Add opacity transition */
-    opacity: 1; /* Start fully opaque */
-}
-
-/* Style for disabled score input section */
-.score-inputs.disabled {
-    opacity: 0.5;
-    pointer-events: none; /* Optional: prevent clicks inside */
+    transition: max-height 0.3s ease, 
+                margin 0.3s ease, 
+                padding 0.3s ease,
+                opacity 0.3s ease,
+                visibility 0.3s ease;
+    position: relative;
+    z-index: 5;
 }
 
 .score-inputs.visible {
-    max-height: 200px; /* Set to height large enough to contain content */
+    visibility: visible;
+    opacity: 1;
+    max-height: 300px;
     margin-top: 10px;
-    border-color: #505050; /* Make border visible */
+    margin-bottom: 5px;
+    border-color: #505050;
     padding-top: 10px;
-    padding-bottom: 10px; /* Add padding when visible */
+    padding-bottom: 10px;
 }
 
 .score-inputs label {
@@ -502,6 +504,12 @@ tr[data-playoff="true"] td:last-child {
     outline: none;
     border-color: #4db6ac; /* Teal accent color */
     box-shadow: 0 0 0 2px rgba(77, 182, 172, 0.3); /* Teal glow */
+}
+
+.score-inputs input:focus-visible {
+    outline: 2px solid #4db6ac;
+    outline-offset: 0;
+    border-color: transparent;
 }
 
 /* Apply button styles removed */
@@ -563,21 +571,25 @@ footer a:hover {
     margin-left: auto; /* Push to right */
 }
 
-.icon-button {
-    background: none;
-    border: none;
-    color: #bdbdbd; /* Match other icons */
-    padding: 5px;
+/* Combine button styles to avoid redundancy */
+.icon-button,
+#randomizeBtn,
+#resetSimulationBtn {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #f0f0f0;
+    padding: 8px 16px; /* Adjusted padding */
+    border-radius: 6px;
     cursor: pointer;
-    border-radius: 50%;
+    font-size: 0.95em; /* Adjusted font size */
+    font-weight: 500;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    transition: none;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation; /* Prevent delay from double-tap to zoom */
-    min-width: 30px; /* Ensure minimum touch target size */
-    min-height: 30px; /* Ensure minimum touch target size */
+    gap: 6px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    appearance: none; /* Remove default iOS styling */
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on iOS/Android */
+    outline: none; /* Remove default focus outline */
 }
 
 .icon-button:focus, .icon-button:focus-visible {
@@ -585,19 +597,30 @@ footer a:hover {
 }
 
 .icon-button svg {
-    width: 1.1em;
-    height: 1.1em;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
 }
 
-.icon-button:hover {
-    color: #ffffff;
-    background-color: #383838; /* Darker hover for icon buttons */
+/* Button hover/active states */
+.icon-button:hover,
+#randomizeBtn:hover,
+#resetSimulationBtn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
 }
 
-.icon-button:active {
-    transform: scale(0.9);
-    color: #ffffff;
+.icon-button:active,
+#randomizeBtn:active,
+#resetSimulationBtn:active {
     background-color: rgba(255, 255, 255, 0.2);
+    transform: scale(0.98);
+}
+
+.icon-button:focus,
+#randomizeBtn:focus,
+#resetSimulationBtn:focus {
+    background-color: rgba(255, 255, 255, 0.1); /* Maintain original background on focus */
+    box-shadow: none; /* Remove any default focus shadow if present */
 }
 
 /* Last Updated Text */
@@ -650,7 +673,8 @@ footer a:hover {
 
 .probability-bar-container:hover {
     box-shadow: 0 5px 20px rgba(0,0,0,0.2), inset 0 1px 2px rgba(0,0,0,0.1);
-    border-color: #666;
+    /* Remove reference to non-existent border */
+    /* border-color: #666; */
     /* Uncomment to enable glow animation on hover */
     /* animation: subtleGlow 1.5s infinite ease-in-out; */
 }
@@ -705,12 +729,6 @@ footer a:hover {
 .prob-segment[style*="width: 13%"] span {
     display: none;
 }
-@media (max-width: 500px) {
-    .prob-segment {
-        font-size: 0.85em;
-    }
-}
-/* No border between segments for minimal look */
 @media (max-width: 500px) {
     .prob-segment {
         font-size: 0.65em;
@@ -773,6 +791,11 @@ footer a:hover {
 }
 
 .dropdown-item:hover {
+    background-color: #444444;
+}
+
+.dropdown-item:focus-visible {
+    outline: 2px solid #4db6ac;
     background-color: #444444;
 }
 
@@ -853,53 +876,6 @@ tr.eliminated td {
     }
 }
 
-.icon-button,
-#randomizeBtn,
-#resetSimulationBtn {
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #f0f0f0;
-    padding: 8px 16px; /* Adjusted padding */
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.95em; /* Adjusted font size */
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    appearance: none; /* Remove default iOS styling */
-    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on iOS/Android */
-    outline: none; /* Remove default focus outline */
-}
-
-.icon-button svg {
-    width: 16px;
-    height: 16px;
-    vertical-align: middle;
-}
-
-/* Button hover/active states */
-.icon-button:hover,
-#randomizeBtn:hover,
-#resetSimulationBtn:hover {
-    background-color: rgba(255, 255, 255, 0.15);
-}
-
-.icon-button:active,
-#randomizeBtn:active,
-#resetSimulationBtn:active {
-    background-color: rgba(255, 255, 255, 0.2);
-    transform: scale(0.98);
-}
-
-.icon-button:focus,
-#randomizeBtn:focus,
-#resetSimulationBtn:focus {
-    background-color: rgba(255, 255, 255, 0.1); /* Maintain original background on focus */
-    box-shadow: none; /* Remove any default focus shadow if present */
-}
-
 /* Matches Section */
 #matchesContainer {
     display: grid;
@@ -910,4 +886,30 @@ tr.eliminated td {
     /* Add padding-top to account for sticky header height */
     /* Estimate table header height + top offset ~ 50-70px? Add some buffer */
     padding-top: 80px; /* Increased padding-top */
+}
+
+/* Add error and loading message styles */
+.error-message {
+    color: #e74c3c;
+    text-align: center;
+    padding: 20px;
+    margin: 20px auto;
+    border: 1px solid #e74c3c;
+    border-radius: 5px;
+    background-color: #fadbd8;
+    max-width: 600px;
+    font-weight: bold;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #3498db;
+    font-style: italic;
+}
+
+/* Style for disabled score input section */
+.score-inputs.disabled {
+    opacity: 0.5;
+    pointer-events: none; /* Optional: prevent clicks inside */
 }
